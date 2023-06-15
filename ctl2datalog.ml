@@ -94,7 +94,45 @@ let string_of_rule (head, body) =
 let string_of_rules rules = List.fold_left (fun acc a -> acc ^ "\n"^ string_of_rule a) "" rules
 
 
-let main = 
+let test_main () = 
   let ef = Exist (Finally (Prop p)) in 
   let rules = translateState (ef) in 
   print_endline (string_of_rules rules ^ "\n")
+
+
+let appendNames (command: string list) : string = 
+  List.fold_left (fun acc a -> acc ^ a) "" command
+
+let rec tranlation2 (command: string list) : string = 
+  match command with 
+  | [] -> ""
+  | [x] -> ""
+  | x :: y :: rest  -> 
+  let subrelation = "Not" ^ appendNames (y::rest) in 
+
+  if String.compare (String.sub x 0 1) "A" == 0 then 
+    x^y ^"(x) :- S(x), !"^ subrelation ^"(x).\n\n" ^ tranlation2 (subrelation::rest) 
+  
+  else 
+  
+    (if String.compare (String.sub x 0 7) "Finally" == 0 then 
+      "Finally (x) :- " ^ y ^ "(x). \nFinally (x) :- transition(x, y), Finally(y).\n\n"
+
+    else if String.compare (String.sub x 0 8) "Globally" ==0  then 
+      "Globally (x) :- End(x), " ^ y ^ "(x). \nGlobally (x) :- transition(x, y), " ^ y ^ "(x), Globally(y).\n\n"
+
+    else if  String.compare (String.sub x 0 11)  "NotGlobally" == 0 then 
+      "NotGlobally (x) :- " ^ y ^ "(x), transition(x, y), NotGlobally (y). \nNotGlobally (x) :- S(x), !" ^ y ^ "(x).\n\n" 
+     
+    else if  String.compare (String.sub x 0 10) "NotFinally" == 0 then 
+      "NotFinally (x) :- S(x), !Finally" ^ y ^ "(x). \nNotFinally (x) :- S(x), !" ^ y ^ "(x), transition(x, y), NotFinally(y).\n\n" 
+     
+    else "not supporting\n\n") ^ tranlation2 (y::rest) 
+    ;;
+
+
+print_endline ("\n" ^tranlation2 ["NotGlobally";"Finally";"Prop"]);;
+
+print_endline ("=================");;
+
+print_endline ("\n" ^tranlation2 ["A";"Globally";"Finally";"Prop"]);;

@@ -10,7 +10,7 @@ transition (2, 5).
 transition (3, 6).
 transition (3, 7).
 
-P (1).  P (4).  P (5). 
+P (2).  P (4).  P (5). 
 P (6).  P (7). 
 
 // 1 ==> 2  ==> (4)
@@ -32,10 +32,9 @@ P (6).  P (7).
 Finally (x) :- P(x).  
 Finally (x) :- transition(x, y), Finally(y). 
 
-NotGloballyEF (x) :- Finally(x), transition(x, y), NotGloballyEF (y).
 NotGloballyEF (x) :- S(x), !Finally(x). 
+NotGloballyEF (x) :- transition(x, y), NotGloballyEF (y).
 
-
-AGEF(x) :- S(x), ! NotGloballyEF(x).                      // forall path Globally EF = not exits (NOT Globally EF)
+AGEF(x) :- S(x), ! NotGloballyEF(x).        // forall path Globally EF = not exits (NOT Globally EF)
 
 .output AGEF(IO=stdout)  
