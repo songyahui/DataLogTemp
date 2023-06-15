@@ -1,5 +1,0 @@
-souffle -F. -D. ef.dl
-
-souffle -t explain ef.dl
-
-explain path(1, 3)

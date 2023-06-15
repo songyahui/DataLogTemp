@@ -10,7 +10,7 @@ transition (2, 5).
 transition (3, 6).
 transition (3, 7).
 
-P (1). P (3). P (6). 
+P (1). P (3).  P (6). 
 
 // (1) ==> 2  ==> 4
 //         2  ==> 5
@@ -27,9 +27,11 @@ P (1). P (3). P (6).
 .decl Globally(x:number)    // Exist Globally
 .decl EG(x:number)         // Exist Globally
 
-Globally (x) :- P(x). 
-Globally (x) :- transition(x, y), P(x), Globally(y). 
+Globally (x) :- P(x), transition(x, y),  Globally(y). 
+Globally (x) :- End(x), P(x). 
+
 
 EG (x) :- Start(x), Globally (x).
 
-.output EG 
+.output EG(IO=stdout)  
+.output Globally(IO=stdout)  

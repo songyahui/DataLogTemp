@@ -10,7 +10,7 @@ transition (2, 5).
 transition (3, 6).
 transition (3, 7).
 
-P (7). 
+P (6). 
 
 // 1 ==> 2  ==> 4
 //       2  ==> 5
@@ -32,4 +32,4 @@ Finally (x) :- transition(x, y), Finally(y).
 
 EF (x) :- Finally (x), Start(x).
 
-.output EF 
+.output EF(IO=stdout) 
