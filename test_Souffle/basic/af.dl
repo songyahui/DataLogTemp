@@ -1,0 +1,42 @@
+S(1).S(2).S(3).S(4).S(5).S(6).S(7).
+Start(1).End(4). End(5). End (6). End (7).
+
+transition (1, 2).
+transition (1, 3).
+
+transition (2, 4).
+transition (2, 5).
+
+transition (3, 6).
+transition (3, 7).
+
+//P (2). 
+P (6).
+P (7). 
+
+// 1 ==> (2)  ==> 4
+//       (2)  ==> 5
+// 1 ==>  3  ==> (6) 
+//        3  ==> (7)
+
+.decl S(x:number)
+.decl End(x:number)
+.decl Start(x:number)
+.decl P(x:number) 
+
+.decl transition(x:number, y:number)
+
+.decl Finally(x:number)    // Finally
+.decl AF(x:number)         // Exist Finally
+.decl NotFinally(x:number)
+
+Finally (x) :- P(x).  
+Finally (x) :- transition(x, y), Finally(y). 
+
+//not F 1 = exist !F(1)
+NotFinally (x) :- S(x), !P(x), transition(x, y), !Finally(y). 
+NotFinally (x) :- End(x), !P(x). 
+
+AF(x) :- S(x), Start(x), ! NotFinally(x).
+
+.output AF(IO=stdout) 

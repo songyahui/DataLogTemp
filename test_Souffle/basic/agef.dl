@@ -1,0 +1,42 @@
+S(1).S(2).S(3).S(4).S(5).S(6).S(7).
+Start(1).End(4). End(5). End (6). End (7).
+
+transition (1, 2).
+transition (1, 3).
+
+transition (2, 4).
+transition (2, 5).
+
+transition (3, 6).
+transition (3, 7).
+
+P (4). P (5). P (6).  P (7). 
+
+// 1 ==> 2  ==> (4)
+//       2  ==> (5)
+// 1 ==> 3  ==> (6) 
+//       3  ==> (7)
+
+.decl S(x:number)
+.decl End(x:number)
+.decl Start(x:number)
+.decl P(x:number) 
+
+.decl transition(x:number, y:number)
+
+.decl Finally(x:number)    // Exist Finally
+
+
+.decl NotGEF(x:number)
+.decl AGEF(x:number)      
+
+Finally (x) :- P(x).  
+Finally (x) :- transition(x, y), Finally(y). 
+
+
+NotGEF (x) :- S(x), !Finally(x). // (NOT Globally EF)
+NotGEF (x) :- P(x), transition(x, y), NotGEF (y).
+
+AGEF(x) :- S(x), ! NotGEF(x). // forall path Globally EF = not exits (NOT Globally EF)
+
+.output AGEF  

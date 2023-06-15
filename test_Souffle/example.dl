@@ -1,0 +1,59 @@
+S(1).S(2).S(3).S(4).S(5).
+transition (1, 2).
+transition (2, 3).
+transition (3, 4).
+transition (4, 3).
+transition (1, 5).
+
+
+// 1 ==> 2 ==> 3 <==> 4
+// 1 ==> 5 
+
+P1 (2). 
+P2 (1). P2 (2). P2 (3). P2 (4). 
+
+// Temporal property encoding exercise
+.decl S(x:number)
+.decl P1(x:number)
+.decl P2(x:number)
+
+.decl Finally(x:number)    // Exist Finally
+.decl Globally(x:number)   // Exist Globally
+
+.decl transition(x:number, y:number)
+
+//LTL
+Finally (x) :- P1(x).  
+Finally (x) :- transition(x, y), Finally(y). 
+
+Globally (x) :- P2(x). 
+Globally (x) :- transition(x, y), P2(x), Globally(y). 
+
+.output Finally
+.output Globally
+
+// ForAllFinally 
+.decl ForAllFinally(x:number) 
+.decl NotFinally(x:number)
+
+NotFinally (x) :- S(x), !P1(x), transition(x, y), !Finally(y). 
+NotFinally (x) :- S(x), !P1(x). 
+
+ForAllFinally(x) :- S(x), !NotFinally(x).
+
+.output ForAllFinally 
+
+// ForAllGlobally
+.decl ForAllGlobally(x:number) 
+.decl NotGlobally(x:number)
+
+NotGlobally (x) :- S(x), P2(x), transition(x, y), !Globally(y). 
+NotGlobally (x) :- S(x), !P2(x). 
+
+
+ForAllGlobally(x) :- S(x), !NotGlobally(x).
+
+.output ForAllGlobally
+
+
+// GloballyExistFinally = GloballyFinally (GEF) 
