@@ -112,9 +112,9 @@ let rec tranlation2 (command: string list) : string =
   
 
   if String.compare (String.sub x 0 1) "A" == 0 then 
-    let subrelation = "Not" ^ appendNames (y::rest) in 
+    let subrelation = "N_" ^ appendNames (y::rest) in 
     relation ^"(x) :- S(x), !"^ subrelation ^"(x).\n\n" ^ 
-    tranlation2 (("Not" ^ y)::rest) 
+    tranlation2 (("N_" ^ y)::rest) 
 
   else if String.compare (String.sub x 0 1) "E" == 0 then 
     let subrelation = appendNames (y::rest) in 
@@ -122,30 +122,43 @@ let rec tranlation2 (command: string list) : string =
     tranlation2 (y::rest) 
   
   else 
-  
+    let subrelation = appendNames (y::rest) in 
+
     (
-    if String.compare (String.sub x 0 7) "Finally" == 0 then 
-      relation ^"(x) :- " ^ y ^ "(x). \n"^relation^" (x) :- transition(x, y), "^relation^"(y).\n\n"
+    if String.compare (String.sub x 0 1) "X" == 0 then 
+      relation ^"(x) :- transition(x, y), "^
+      relation ^"(y).\n\n"
 
-    else if String.compare (String.sub x 0 8) "Globally" ==0  then 
-      "Globally (x) :- End(x), " ^ y ^ "(x). \nGlobally (x) :- transition(x, y), " ^ y ^ "(x), Globally(y).\n\n"
 
-    else if  String.compare (String.sub x 0 11)  "NotGlobally" == 0 then 
-      relation ^"(x) :- " ^ y ^ "(x), transition(x, y), "^ relation ^" (y). \n"^
-      relation ^"(x) :- S(x), !" ^ y ^ "(x).\n\n" 
+    else if String.compare (String.sub x 0 1) "F" == 0 then 
+      relation ^"(x) :- " ^ y ^ "(x). \n"^
+      relation^"(x) :- transition(x, y), "^relation^"(y).\n\n"
+
+
+    else if String.compare (String.sub x 0 1) "G" ==0  then 
+      relation^"(x) :- End(x), " ^ y ^ "(x). \n"^
+      relation^"(x) :- transition(x, y), " ^ y ^ "(x), "^relation^"(y).\n\n"
+
+    else if  String.compare (String.sub x 0 3)  "N_G" == 0 then 
+      relation ^"(x) :- " ^ subrelation ^ "(x), transition(x, y), "^ relation ^" (y). \n"^
+      relation ^"(x) :- S(x), !" ^ subrelation ^ "(x).\n\n" 
     
-    else if  String.compare (String.sub x 0 10) "NotFinally" == 0 then 
-      relation ^ "(x) :- S(x), !Finally" ^ y ^ "(x). \n"^
-      relation^" (x) :- S(x), !" ^ y ^ "(x), transition(x, y), NotFinally(y).\n\n" 
+    else if  String.compare (String.sub x 0 3) "N_F" == 0 then 
+      relation ^"(x) :- S(x), !F" ^ y ^ "(x). \n"^
+      relation ^"(x) :- S(x), !" ^ y ^ "(x), transition(x, y), "^relation^"(y).\n\n" 
+      ^ tranlation2 ("F"::y::rest) 
      
     else "not supporting\n\n") ^ tranlation2 (y::rest) 
     ;;
 
 
 let test_cases_tranlation2 = [
-  ["E"; "Globally"; "Y"];
-  ["NotGlobally";"Finally";"Prop"];
-  ["A";"Globally";"Finally";"Prop"]
+  ["E"; "G"; "Y"];
+  ["N_G";"F";"Prop"];
+  ["A";"G";"E";"F";"Prop"];
+  ["E";"X";"Prop"];
+  ["A";"F";"Prop"];
+  ["A";"G";"Prop"]
   ];;
 
 let results = List.fold_left (fun acc a -> 
