@@ -10,8 +10,7 @@ transition (2, 5).
 transition (3, 6).
 transition (3, 7).
 
-//P (2). 
-//P (5). 
+P (1).  P (4).  P (5). 
 P (6).  P (7). 
 
 // 1 ==> 2  ==> (4)
@@ -25,19 +24,18 @@ P (6).  P (7).
 .decl P(x:number) 
 
 .decl transition(x:number, y:number)
-
 .decl Finally(x:number)    // Exist Finally
 
-
-.decl NotGEF(x:number)
+.decl NotGloballyEF(x:number)
 .decl AGEF(x:number)      
 
 Finally (x) :- P(x).  
 Finally (x) :- transition(x, y), Finally(y). 
 
-NotGEF (x) :- S(x), !Finally(x). // (NOT Globally EF)
-NotGEF (x) :- P(x), transition(x, y), NotGEF (y).
+NotGloballyEF (x) :- Finally(x), transition(x, y), NotGloballyEF (y).
+NotGloballyEF (x) :- S(x), !Finally(x). 
 
-AGEF(x) :- S(x), ! NotGEF(x). // forall path Globally EF = not exits (NOT Globally EF)
+
+AGEF(x) :- S(x), ! NotGloballyEF(x).                      // forall path Globally EF = not exits (NOT Globally EF)
 
 .output AGEF(IO=stdout)  
