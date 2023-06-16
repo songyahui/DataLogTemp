@@ -1,0 +1,33 @@
+S(1).S(2).S(3).S(4).S(5).S(6).S(7).
+Start(1).End(4). End(5). End (6). End (7).
+
+transition (1, 2).
+transition (1, 3).
+
+transition (2, 4).
+transition (2, 5).
+
+transition (3, 6).
+transition (3, 7).
+
+P(1). P(2). Q(4). Q(7). 
+
+// 1 ==> 2  ==> 4
+//       2  ==> 5
+// 1 ==> 3  ==> (6) 
+//       3  ==> 7
+
+.decl S(x:number)
+.decl End(x:number)
+.decl Start(x:number)
+.decl P(x:number) 
+.decl Q(x:number) 
+
+.decl transition(x:number, y:number)
+
+.decl UNTIL_PQ (x:number)
+
+UNTIL_PQ(x) :- Q(x).
+UNTIL_PQ(x) :- P(x), transition(x, y), UNTIL_PQ(y).
+
+.output UNTIL_PQ(IO=stdout)
