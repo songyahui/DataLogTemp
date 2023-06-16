@@ -110,10 +110,13 @@ let rec tranlation2 (command: string list) : string =
   | [x] -> ""
   | x :: y :: rest  -> 
   
+  ".decl "^ relation ^"(x:number)\n\n"^
 
   if String.compare (String.sub x 0 1) "A" == 0 then 
     let subrelation = "N_" ^ appendNames (y::rest) in 
-    relation ^"(x) :- S(x), !"^ subrelation ^"(x).\n\n" ^ 
+    relation ^"(x) :- S(x), "^ 
+    (if String.compare y "X" == 0 then "!End(x)," else "") ^
+    "!" ^ subrelation ^"(x).\n\n" ^ 
     tranlation2 (("N_" ^ y)::rest) 
 
   else if String.compare (String.sub x 0 1) "E" == 0 then 
@@ -123,11 +126,11 @@ let rec tranlation2 (command: string list) : string =
   
   else 
     let subrelation = appendNames (y::rest) in 
-
     (
+
     if String.compare (String.sub x 0 1) "X" == 0 then 
       relation ^"(x) :- transition(x, y), "^
-      relation ^"(y).\n\n"
+      subrelation ^"(y).\n\n"
 
 
     else if String.compare (String.sub x 0 1) "F" == 0 then 
@@ -147,6 +150,9 @@ let rec tranlation2 (command: string list) : string =
       relation ^"(x) :- S(x), !F" ^ y ^ "(x). \n"^
       relation ^"(x) :- S(x), !" ^ y ^ "(x), transition(x, y), "^relation^"(y).\n\n" 
       ^ tranlation2 ("F"::y::rest) 
+    
+    else if  String.compare (String.sub x 0 3) "N_X" == 0 then 
+      relation ^"(x) :- transition(x, y), !"^ subrelation^"(y).\n\n" 
      
     else "not supporting\n\n") ^ tranlation2 (y::rest) 
     ;;
@@ -154,17 +160,20 @@ let rec tranlation2 (command: string list) : string =
 
 let test_cases_tranlation2 = [
   ["E"; "G"; "Y"];
-  ["N_G";"F";"Prop"];
-  ["A";"G";"E";"F";"Prop"];
-  ["E";"X";"Prop"];
-  ["A";"F";"Prop"];
-  ["A";"G";"Prop"]
+  ["N_G";"F";"P"];
+  ["A";"G";"E";"F";"P"];
+  ["E";"X";"P"];
+  ["A";"F";"P"];
+  ["A";"G";"P"];
+  ["A";"X";"P"]
   ];;
 
 let results = List.fold_left (fun acc a -> 
   acc ^ 
-  "\n=====" ^appendNames a^ "=====\n" ^ 
-  tranlation2 a
+  let formulaName = appendNames a in 
+  "\n=====" ^ formulaName ^ "=====\n" ^ 
+  tranlation2 a ^ "\n" ^
+  ".output "^ formulaName  ^"(IO=stdout) "
   ) "" test_cases_tranlation2 ;;
 
 print_endline (results);;
