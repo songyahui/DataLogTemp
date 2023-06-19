@@ -1,0 +1,40 @@
+malloc ("p", 1).
+alias  ("q", "p", 7).
+free   ("q", 9).
+free   ("p", 10).
+
+flow (1, 7).
+flow (7, 9).
+flow (9, 10). 
+
+.decl malloc (x:symbol, y:number)
+.decl free   (x:symbol, y:number)
+.decl alias  (x:symbol, y:symbol, z:number)
+.decl flow   (x:number, y:number)
+.decl transition   (x:number, y:number)
+
+.decl FinallyFree (x:symbol, y:number)
+.decl FinallyFreeShell (x:symbol, y:number)
+.decl DoubleFree (x:symbol)
+.decl transAlias (x:symbol, y:symbol, l:number)
+
+transition(x, y) :- flow (x, y).
+transition(x, z) :- flow (x, y), transition (y, z).
+
+FinallyFree(o, l) :- free(o, l). // current position 
+FinallyFree(o, l) :- transition(l, l1), FinallyFree(o, l1). 
+
+transAlias(o2, o1, l) :- alias(o2, o1, l). // current position 
+transAlias(o2, o1, l) :- alias(o2, o3, l), transAlias(o3, o1, _).
+
+FinallyFreeShell (o, l1) :- malloc (o, l), transition(l, l1), free(o, l1).  // future position 
+FinallyFreeShell (o, l1) :- malloc (o, _), transAlias(o1, o, l1), FinallyFree (o1, l1). // future position 
+
+DoubleFree (o) :- FinallyFreeShell (o, l), transition(l, l1), FinallyFree(o, l1). 
+DoubleFree (o) :- FinallyFreeShell (o, l), transition(l, l1), transAlias(o1, o, l1), FinallyFree (o1, l1). 
+
+
+
+.output DoubleFree(IO=stdout) 
+.output FinallyFreeShell(IO=stdout) 
+
