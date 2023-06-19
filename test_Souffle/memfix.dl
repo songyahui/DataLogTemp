@@ -34,7 +34,23 @@ DoubleFree (o) :- FinallyFreeShell (o, l), transition(l, l1), FinallyFree(o, l1)
 DoubleFree (o) :- FinallyFreeShell (o, l), transition(l, l1), transAlias(o1, o, l1), FinallyFree (o1, l1). 
 
 
+init("p", 1).
+init("q", 7).
+flow (1, 3).
+//free   ("p", 3).
+.decl init (x:symbol, y:number)
 
 .output DoubleFree(IO=stdout) 
 .output FinallyFreeShell(IO=stdout) 
+.output FinallyFree(IO=stdout) 
+
+.decl NotFinallyFree (x:symbol, y:number)
+.decl ForallFinallyFree (x:symbol, y:number)
+
+NotFinallyFree (x, l) :- init(x, l), flow(l, l1), !FinallyFree (x, l1).
+
+ForallFinallyFree (o, l) :- malloc (o, l), !NotFinallyFree(o, l).
+
+.output NotFinallyFree(IO=stdout) 
+.output ForallFinallyFree(IO=stdout) 
 
