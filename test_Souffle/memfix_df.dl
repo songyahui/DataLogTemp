@@ -1,0 +1,33 @@
+malloc ("p", 1).
+alias  ("q", "p", 7).
+free   ("q", 9).
+free   ("p", 10).
+
+flow (1, 7).
+flow (7, 9).
+flow (9, 10). 
+
+.decl malloc (x:symbol, y:number)
+.decl free   (x:symbol, y:number)
+.decl alias  (x:symbol, y:symbol, z:number)
+.decl flow   (x:number, y:number)
+.decl transFlow   (x:number, y:number)
+
+.decl FinallyFreeObj (x:symbol, y:number)
+.decl DoubleFree (x:symbol)
+.decl transAlias (x:symbol, y:symbol, l:number)
+
+transFlow(x, y) :- flow (x, y).
+transFlow(x, z) :- flow (x, y), transFlow (y, z).
+
+transAlias(o2, o1, l) :- alias(o2, o1, l). // current position 
+transAlias(o2, o1, l) :- alias(o2, o3, l), transAlias(o3, o1, _).
+
+FinallyFreeObj (o, l1) :- malloc (o, l), transFlow(l, l1), free(o, l1).  // future position 
+FinallyFreeObj (o, l2) :- malloc (o, l), transFlow(l, l1), transAlias(o1, o, l1), transFlow(l1, l2), free(o1, l2). // future position 
+
+DoubleFree (o) :- FinallyFreeObj (o, l), transFlow(l, l1), free(o, l1). 
+DoubleFree (o) :- FinallyFreeObj (o, l), transFlow(l, l1), transAlias(o1, o, l1), transFlow(l1, l2), free(o1, l2). 
+
+.output DoubleFree(IO=stdout) 
+.output FinallyFreeObj(IO=stdout) 
