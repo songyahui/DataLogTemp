@@ -4,11 +4,11 @@
 #include <string.h>
 
 int getValueFromArray(int *array, int len, int index) {
+    // error is index is negative. 
 
     int value;
 
 // check that the array index is less than the maximum 
-
 // length of the array 
     if (index < len) {
 // get the value at the specified index of the array 
@@ -26,6 +26,11 @@ int getValueFromArray(int *array, int len, int index) {
 
 int main() {
     int arr[5] = {1, 2, 3, 4, 5}; 
-    int res = getValueFromArray(arr, 3, 2);
-    printf ("%i", res);
+    int res = getValueFromArray(arr, 3, -2);
+    printf ("%i\n", res);
 }
+
+/*
+int arr[5] = {1, 2, 3, 4, 5};     =>    malloc(arr, 5); 
+Buffer_Overflow (arr) :- Finally exist access (arr, bound) and bound > size 
+*/

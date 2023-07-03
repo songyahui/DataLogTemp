@@ -6,33 +6,26 @@
 #define AF_INET 1024
 typedef char in_addr_t;
 
-
-
 void validate_addr_form(char *user_supplied_addr){
     return ;
 }
 
-/*
-typedef int in_addr;
-unsigned long inet_addr(
-  const char *cp
-);
-*/
 in_addr_t inet_addr(const char *cp);
 
 typedef struct hostent {
-  char  *h_name;
-  char  **h_aliases;
-  short h_addrtype;
-  short h_length;
-  char  **h_addr_list;
+  char  h_name[256];
 } HOSTENT, *PHOSTENT, *LPHOSTENT;
-
 
 struct hostent *gethostbyaddr(char *host_address,
                               int address_length,
                               int address_type);
-
+/*
+{
+    struct hostent *hp;
+    *hp->h_name = "aaaaaaaaaaaaaaaa";
+    return hp;
+}
+*/
 
 void host_lookup(char *user_supplied_addr){
     struct hostent *hp;
@@ -45,10 +38,20 @@ void host_lookup(char *user_supplied_addr){
     *addr = inet_addr(user_supplied_addr);
     hp = gethostbyaddr(addr, 4, AF_INET);
     strcpy(hostname, hp->h_name);
+    printf ("%s", hostname);
 }
 
-// Driver Code
 int main()
 {
+    char * address = "address"; 
+    host_lookup (address);
     return 0;
 }
+
+// char* strcpy(char* destination, const char* source);
+// the size of the destination string should be large enough to store the copied string. Otherwise, it may result in undefined behavior.
+
+/*
+Buffer overflow. 
+Finally strcpy(hostname, hp_h_name) and length(hostname, a), length(hp_h_name, b), a <  b. 
+*/

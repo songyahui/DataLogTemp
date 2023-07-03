@@ -3,7 +3,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+char* indexing (int index) {
     char *items[] = {"boat", "car", "truck", "train"};
-    printf("\nYou selected %s\n", items[4-1]);
+    return items[index];
 }
+
+int main() {
+    char* res = indexing (5);
+    printf("\nYou selected %s\n", res);
+}
+
+/*
+char *items[] = {"boat", "car", "truck", "train"};    =>    malloc(items, 4); 
+Buffer_Overflow (loc) :- Finally exist access (items, bound) and bound > size 
+*/
