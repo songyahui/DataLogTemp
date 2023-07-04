@@ -19,13 +19,22 @@ typedef struct hostent {
 struct hostent *gethostbyaddr(char *host_address,
                               int address_length,
                               int address_type);
-/*
-{
-    struct hostent *hp;
-    *hp->h_name = "aaaaaaaaaaaaaaaa";
-    return hp;
-}
-*/
+
+/*@   strcpy(des, src)  =>  strcpy(des, src, LINENO);
+      strlen(str)       =>  strlen(str, ret); 
+@*/
+     
+     
+/* 
+if (a < b)        =>  checkLT (a, b, LINENO);
+
+     NotBuffer_Overflow(des, src, l) :- strcpy(des, src, l), 
+                                   transFlow(l1, l), check(des, src, l1), 
+                                   transFlow(l2, l1), Entry (l2).  
+
+     Buffer_Overflow (des, src, l) :- strcpy(des, src, l), ! NotBuffer_Overflow(des, src, l).
+@*/
+
 
 void host_lookup(char *user_supplied_addr){
     struct hostent *hp;
@@ -37,7 +46,12 @@ void host_lookup(char *user_supplied_addr){
     validate_addr_form(user_supplied_addr);
     *addr = inet_addr(user_supplied_addr);
     hp = gethostbyaddr(addr, 4, AF_INET);
-    strcpy(hostname, hp->h_name);
+    if (strlen(hostname) < strlen(hostname)){
+        return ; 
+    }
+    else {
+        strcpy(hostname, hp->h_name);
+    }
     printf ("%s", hostname);
 }
 
@@ -50,8 +64,9 @@ int main()
 
 // char* strcpy(char* destination, const char* source);
 // the size of the destination string should be large enough to store the copied string. Otherwise, it may result in undefined behavior.
-
+// if 
 /*
 Buffer overflow. 
-Finally strcpy(hostname, hp_h_name) and length(hostname, a), length(hp_h_name, b), a <  b. 
+Finally strcpy(hostname, hp_h_name) and length(hostname, x), length(hp_h_name, b), a <  b. 
+Buffer overflow :- !check(strlen(des), strlen(src), l1), strcpy(des, src), trans(l1, l2). 
 */

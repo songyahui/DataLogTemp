@@ -1,0 +1,59 @@
+Entry (31). 
+S(31). S(39). S(40). S(41).
+
+flow (31, 39).
+flow (39, 40).
+flow (31, 41).
+.decl S(x:number)
+
+
+check ("hostname", "hp_h_name", 39).
+
+strcpy("hostname", "hp_h_name", 40). 
+
+strcpy("hostname", "hp_h_name", 41). 
+
+.decl flow(x:number, y:number)
+.decl Entry(x:number)
+
+
+.decl transFlow   (x:number, y:number)
+.decl strcpy   (x:symbol, y:symbol, l:number)
+.decl check    (x:symbol, y:symbol, l:number)
+.decl NotBuffer_Overflow    (x:symbol, y:symbol, l:number)
+.decl Buffer_Overflow    (x:symbol, y:symbol, l:number)
+
+.decl FinallyStrcpy    (x:symbol, y:symbol, l:number)
+
+
+transFlow(x, y) :- flow (x, y).
+transFlow(x, z) :- flow (x, y), transFlow (y, z).
+
+FinallyStrcpy(des, src, l) :- strcpy(des, src, l). 
+FinallyStrcpy(des, src, l2) :- transFlow(_, l2), FinallyStrcpy(des, src, l2). 
+
+
+NotBuffer_Overflow(des, src, l) :- strcpy(des, src, l), 
+                                   transFlow(l1, l), check(des, src, l1), 
+                                   transFlow(l2, l1), Entry (l2).  
+
+Buffer_Overflow (des, src, l) :- strcpy(des, src, l), ! NotBuffer_Overflow(des, src, l).
+                                
+// !check(des, src) -> F (strcpy(des, src))
+
+.decl FBuffer_Overflow(x:number)         // Exist Finally
+.decl NotFBuffer_Overflow(x:number)         // Exist Finally
+.decl AFBuffer_Overflow(x:number)         // Exist Finally
+
+
+FBuffer_Overflow (loc) :-  Entry (loc), transFlow(loc, l), Buffer_Overflow(_, _, l).  
+
+NotFBuffer_Overflow (loc) :- Entry (loc), transFlow(loc, l), !Buffer_Overflow(_, _, l).  
+
+AFBuffer_Overflow (loc) :- Entry(loc),  !NotFBuffer_Overflow(loc).  
+
+.output NotBuffer_Overflow(IO=stdout) 
+.output Buffer_Overflow(IO=stdout) 
+.output FBuffer_Overflow(IO=stdout) 
+.output NotFBuffer_Overflow(IO=stdout) 
+.output AFBuffer_Overflow(IO=stdout) 
