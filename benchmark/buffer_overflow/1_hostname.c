@@ -20,14 +20,11 @@ struct hostent *gethostbyaddr(char *host_address,
                               int address_length,
                               int address_type);
 
-/*@   strcpy(des, src)  =>  strcpy(des, src, LINENO);
-      strlen(str)       =>  strlen(str, ret); 
-@*/
-     
+/*@   strcpy(des, src)  :  strcpy(des, src)  @*/
+/*@   strlen(str)       :  strlength(str, ret)  @*/
+/*@   IfStmt(a > b)     :  checkGT(a, b) @*/ // , checkGTEQ(a, b)
      
 /* 
-if (a < b)        =>  checkLT (a, b, LINENO);
-
      NotBuffer_Overflow(des, src, l) :- strcpy(des, src, l), 
                                    transFlow(l1, l), check(des, src, l1), 
                                    transFlow(l2, l1), Entry (l2).  
@@ -46,13 +43,14 @@ void host_lookup(char *user_supplied_addr){
     validate_addr_form(user_supplied_addr);
     *addr = inet_addr(user_supplied_addr);
     hp = gethostbyaddr(addr, 4, AF_INET);
-    if (strlen(hostname) < strlen(hostname)){
-        return ; 
-    }
-    else {
+    int a = strlen(hostname) ; 
+    int b = strlen(hp->h_name) ;
+    //if (a > b){
         strcpy(hostname, hp->h_name);
-    }
-    printf ("%s", hostname);
+        printf ("%s", hostname);   
+    //}
+    return; 
+    
 }
 
 int main()
