@@ -1,0 +1,29 @@
+.decl c(x:symbol, y:symbol, z:symbol)
+
+.decl a(x:symbol, y:symbol)
+.decl b(x:symbol, y:symbol)
+
+.decl symlog_1_domain(x:symbol)
+
+.decl symlog_2_domain(x:symbol)
+
+
+c(x, symlog_1, symlog_2):- 
+    a(x, symlog_1), b(x, symlog_2), symlog_1_domain(symlog_1), 
+		symlog_2_domain(symlog_2).
+
+a("1", symlog_1):- symlog_1_domain(symlog_1).
+a(symlog_1, symlog_1):- symlog_1_domain(symlog_1).
+
+b("1", symlog_2):- symlog_2_domain(symlog_2).
+b(symlog_2, symlog_2):- symlog_2_domain(symlog_2).
+
+symlog_1_domain("1").
+symlog_1_domain("alpha1").
+symlog_1_domain("alpha2").
+
+symlog_2_domain("1").
+symlog_2_domain("alpha2").
+symlog_2_domain("alpha1"). 
+
+.output c(IO=stdout) 
