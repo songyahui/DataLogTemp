@@ -13,22 +13,42 @@
 transFlow(x, y) :- flow (x, y).
 transFlow(x, z) :- flow (x, y), transFlow (y, z).
 
-NotBuffer_Overflow(des, src, l) :- strcpy(des, src, l), 
-                                   transFlow(l1, l), checkGT(a, b, l1), strlength(des, a, _),strlength(src, b, _), 
-                                   transFlow(l2, l1), Entry (l2).  //49, 48, 36.  
+NotBuffer_Overflow(des, src, l3) :- strcpy(des, src, l3), 
+                                   transFlow(l2, l3), checkGT(a, b, l2), strlength(des, a, _),strlength(src, b, _), 
+                                   transFlow(l1, l2), Entry (l1).  
 
 Buffer_Overflow (des, src, l) :- strcpy(des, src, l), ! NotBuffer_Overflow(des, src, l).
 
+
 //<<=== Facts for function: host_lookup ===>>
 
-Entry(36).
-flow(36, 46).
-flow(46, 47).
-flow(47, 49).
-strlength("hostname", "a", 46).
-strlength("hp_h_name", "b", 47).
-strcpy("hostname", "hp_h_name", 49).
+Entry(28).
+flow(38, 39).
+flow(39, 40).
+flow(28, 37).
+flow(37, 38).
+flow(38, 44).
+strlength("hostname", "a", 37).
+strlength("hp_h_name", "b", 38).
+checkGT("a", "b", 39).
+strcpy("hostname", "hp_h_name", 40).
+strlength("hostname", "a", 37).
+strlength("hp_h_name", "b", 38).
+strcpy("hostname", "hp_h_name", 44).
 
 
 .output NotBuffer_Overflow(IO=stdout) 
 .output Buffer_Overflow(IO=stdout) 
+
+
+
+.decl AG_NotBuffer_Overflow(x:number)         // Exist Globally
+.decl FinallyBuffer_Overflow(x:number)
+
+FinallyBuffer_Overflow (x) :- Buffer_Overflow (_, _, x). 
+FinallyBuffer_Overflow (x) :- Buffer_Overflow (_, _, loc), transFlow(x, loc). 
+
+AG_NotBuffer_Overflow(x) :- Entry(x), ! FinallyBuffer_Overflow(x).
+
+.output AG_NotBuffer_Overflow(IO=stdout) 
+

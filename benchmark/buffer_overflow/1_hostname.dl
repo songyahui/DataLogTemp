@@ -33,9 +33,9 @@ FinallyStrcpy(des, src, l) :- strcpy(des, src, l).
 FinallyStrcpy(des, src, l2) :- transFlow(_, l2), FinallyStrcpy(des, src, l2). 
 
 
-NotBuffer_Overflow(des, src, l) :- strcpy(des, src, l), 
-                                   transFlow(l1, l), check(des, src, l1), 
-                                   transFlow(l2, l1), Entry (l2).  
+NotBuffer_Overflow(des, src, l3) :- strcpy(des, src, l3), 
+                                   transFlow(l2, l3), check(des, src, l2), 
+                                   transFlow(l1, l2), Entry (l1).  
 
 Buffer_Overflow (des, src, l) :- strcpy(des, src, l), ! NotBuffer_Overflow(des, src, l).
                                 

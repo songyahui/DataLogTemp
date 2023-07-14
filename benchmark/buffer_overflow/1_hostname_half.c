@@ -34,7 +34,15 @@ void host_lookup(char *user_supplied_addr){
     validate_addr_form(user_supplied_addr);
     *addr = inet_addr(user_supplied_addr);
     hp = gethostbyaddr(addr, 4, AF_INET);
-    strcpy(hostname, hp->h_name);
+    int a = strlen(hostname) ;  // 
+    int b = strlen(hp->h_name) ;
+    if (a > b){
+        strcpy(hostname, hp->h_name);
+
+    }
+    else {
+        strcpy(hostname, hp->h_name);
+    }
     return;   
 }
 
