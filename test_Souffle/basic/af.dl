@@ -3,24 +3,27 @@ Start(1).End(4). End(5). End (6). End (7).
 
 transition (1, 2).
 transition (1, 3).
-
 transition (2, 4).
 transition (2, 5).
-
 transition (3, 6).
 transition (3, 7).
 
 
 // For all trace finally, expected result is AF(1) exist. 
 // Failing Test case 1 
-// P(2).  // possible patches are i) add P(3); or ii) add P(6) and P 7.
+// 
+//P(4).P(5).  // possible patches are i) add P(3); or ii) add 
+//P(6). 
+//P(7).
+
+P(2).P(3).
 
 // Failing Test case 2 
- P(4).  // possible patches are i) add P(3) and P(5); or ii) add P(3) and P(2).
+// P(4).  // possible patches are i) add P(3) and P(5); or ii) add P(3) and P(2).
 
 
-// 1 ==> (2)  ==> 4
-//       (2)  ==> 5
+// 1 ==> 2  ==> (4)
+//       2  ==> (5)
 // 1 ==>  3  ==> (6) 
 //        3  ==> (7)
 
@@ -45,6 +48,5 @@ NotFinally (x) :- S(x), !P(x), transition(x, y), NotFinally(y).
 AF(x) :- Start(x), ! NotFinally(x).
 
 .output AF(IO=stdout) 
-//.output NotFinally(IO=stdout) 
-//.output Finally(IO=stdout) 
+
 
