@@ -1,0 +1,60 @@
+S(1).S(2).S(3).S(4).S(5).S(6).S(7).S(8).
+Start(1).
+
+transition (1, 2).
+transition (1, 3).
+transition (2, 4).
+transition (2, 5).
+transition (3, 6).
+transition (3, 7).
+// cycle between 2 and 8. 
+transition (2, 8).
+transition (8, 2).
+P(4).P(5).P(6).P(7).
+
+// test case: AF(1) and AGEF(1) both true
+//Accept(4). Accept(5). Accept (6). Accept (7). 
+
+// test case: AGEF(1) = true and AF(1) false 
+//Accept(4). Accept(5). Accept (6). Accept (7). Accept (8).
+
+// test case: AGEF(1) = true and AF(1) false 
+Accept(4). Accept(5). Accept (6). Accept (7). Accept (2).
+
+
+//        8 
+//       | |
+// 1 ==>  2  ==> (4)
+//        2  ==> (5)
+// 1 ==>  3  ==> (6) 
+//        3  ==> (7)
+
+.decl S(x:number)
+.decl Accept(x:number)
+.decl Start(x:number)
+.decl P(x:number) 
+.decl Finally(x:number) 
+.decl NotGloballyEF(x:number) 
+.decl AGEF(x:number) 
+.decl transition(x:number, y:number)
+.decl AF(x:number)         // Exist Finally
+.decl NotFinally(x:number)
+
+NotFinally (x) :- !P(x), Accept (x).
+NotFinally (x) :- !P(x), transition(x, y), NotFinally(y). 
+
+AF(x) :- Start(x), ! NotFinally(x).
+
+
+Finally (x) :- P(x).  
+Finally (x) :- transition(x, y), Finally(y). 
+
+NotGloballyEF (x) :- S(x), !Finally(x). 
+NotGloballyEF (x) :- transition(x, y), NotGloballyEF (y).
+
+AGEF(x) :- Start(x), ! NotGloballyEF(x).        // forall path Globally EF = not exits (NOT Globally EF)
+
+
+.output AF(IO=stdout) 
+//.output NotFinally(IO=stdout) 
+.output AGEF(IO=stdout) 
