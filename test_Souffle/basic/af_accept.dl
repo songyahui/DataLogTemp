@@ -9,17 +9,17 @@ transition (3, 6).
 transition (3, 7).
 // cycle between 2 and 8. 
 transition (2, 8).
-transition (8, 2).
+//transition (8, 2).
 P(4).P(5).P(6).P(7).
 
-// test case: AF(1) and AGEF(1) both true
-//Accept(4). Accept(5). Accept (6). Accept (7). 
+//test case: AF(1) and AGEF(1) both true
+Accept(4). Accept(5). Accept (6). Accept (7). 
 
 // test case: AGEF(1) = true and AF(1) false 
 //Accept(4). Accept(5). Accept (6). Accept (7). Accept (8).
 
 // test case: AGEF(1) = true and AF(1) false 
-Accept(4). Accept(5). Accept (6). Accept (7). Accept (2).
+//Accept(4). Accept(5). Accept (6). Accept (7). Accept (2).
 
 
 //        8 
@@ -40,6 +40,8 @@ Accept(4). Accept(5). Accept (6). Accept (7). Accept (2).
 .decl AF(x:number)         // Exist Finally
 .decl NotFinally(x:number)
 
+
+
 NotFinally (x) :- !P(x), Accept (x).
 NotFinally (x) :- !P(x), transition(x, y), NotFinally(y). 
 
@@ -55,6 +57,23 @@ NotGloballyEF (x) :- transition(x, y), NotGloballyEF (y).
 AGEF(x) :- Start(x), ! NotGloballyEF(x).        // forall path Globally EF = not exits (NOT Globally EF)
 
 
+.decl T(x:number, y:number)
+.decl NotF(x:number)
+.decl H(x:number)
+
+T(x, y) :- !P(x), transition(x, y).
+T(x, z) :- T(x, y), !P(y), transition(y, z).
+
+NotF(x) :- T(x, x).
+NotF(x) :- !P(x), transition(x, y), NotF(y).
+
+H(x) :- Start(x), !NotF(x).
+
 .output AF(IO=stdout) 
+.output H(IO=stdout) 
+.output NotF(IO=stdout) 
+.output T(IO=stdout) 
+
+
 //.output NotFinally(IO=stdout) 
 .output AGEF(IO=stdout) 
