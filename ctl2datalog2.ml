@@ -12,7 +12,7 @@ type pure = TRUE
           | Neg of pure
 
 (*Arithimetic propositions formulae*)
-type propositions = string * (pure)
+type propositions = string * pure
 
 type ctl = 
     Atom of propositions 
@@ -39,6 +39,24 @@ type body = Pos of relation | Neg of relation | Pure of pure
 type rule = head * (body list) 
 type datalog = decl list * rule list
 
+let string_of_relation (relation:relation)= "string_of_relation TBD " 
+
+let string_of_bodies (bodies:body list) = "string_of_bodies TBD " 
+
+let string_of_decls (decls:decl list) = "string_of_decls TBD;\n"
+let rec string_of_rules (rules: rule list) = 
+  match rules with 
+  | [] -> "" 
+  | (head, bodies)::rest -> 
+    string_of_relation head ^ " :- " ^ string_of_bodies bodies ^ ".\n" 
+    ^ string_of_rules rest
+
+
+
+let string_of_datalog (datalog:datalog) : string = 
+  let (decls, rules) = datalog in 
+  string_of_decls decls ^ string_of_rules rules
+
 let translation (ctl:ctl) : datalog = 
   match ctl with 
   | Atom (pName, pure) -> 
@@ -48,3 +66,9 @@ let translation (ctl:ctl) : datalog =
     let rule = (head, bodies) in 
     (decls, [rule])
   | _ -> failwith "TBD" 
+
+let tests  = 
+  [Atom("xIsPos", (Gt(VAR "x", INT 0)))] 
+
+let main = 
+  List.map (fun item -> print_endline (string_of_datalog (translation item))) tests
