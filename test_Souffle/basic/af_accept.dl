@@ -60,6 +60,8 @@ AGEF(x) :- Start(x), ! NotGloballyEF(x).        // forall path Globally EF = not
 .decl T(x:number, y:number)
 .decl NotF(x:number)
 .decl H(x:number)
+.decl T(x:number, y:number)
+
 
 T(x, y) :- !P(x), transition(x, y).
 T(x, z) :- T(x, y), !P(y), transition(y, z).
