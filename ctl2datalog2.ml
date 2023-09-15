@@ -226,7 +226,6 @@ let translation (ctl:ctl) : datalog =
         (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> [( (newName, newArgs) , [Pos(x1,f1Args); Neg(x2,f2Args)] ) ])
 
     (* Primary CTL Encoding *)
-    (* Current status - is monadic but not fully sure if guarded *)
     (* The idea behind this encoding is state encoding is to reuse the previous name when a transition is needed *)
     | EX f ->   
       (* TODO *)  
@@ -306,7 +305,6 @@ let translation (ctl:ctl) : datalog =
  
     
     | EU (f1,f2)->
-      (* TODO *) 
       processPair f1 f2 
       (fun x1 x2 ->  x1 ^ "_EU_" ^ x2) 
       (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> 
