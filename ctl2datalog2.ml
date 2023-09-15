@@ -107,6 +107,11 @@ let param_compare (a:param) (b:param) =
       | (Symbol,Number) -> -1
     ) else name_diff
 
+let term_compare (a:terms) (b:terms) =
+  match (a,b) with
+  | VAR x, VAR y -> String.compare x y
+  | _ ,_ -> 0
+
 let string_of_datalog (datalog:datalog) : string = 
   let (decls, rules) = datalog in 
   string_of_decls decls ^ string_of_rules rules
@@ -116,7 +121,7 @@ let rec infer_variables (pure:pure) =
     match x with
     VAR x -> [VAR x]
     | _ -> [] in 
-  match pure with 
+ let x = match pure with 
   TRUE -> []
   | FALSE -> []
   | Gt (a,b) -> (get_variable_terms a) @ (get_variable_terms b) 
@@ -128,6 +133,7 @@ let rec infer_variables (pure:pure) =
   | PureOr(a,b) -> (infer_variables a) @ (infer_variables b)
   | PureAnd(a,b) ->(infer_variables a) @ (infer_variables b)
   | Neg a -> infer_variables a
+  in List.sort_uniq term_compare x
   (* | Pos a -> get_variable_terms a *)
 
 let rec infer_params (pure:pure) : param list = 
@@ -135,7 +141,7 @@ let rec infer_params (pure:pure) : param list =
     match x with
     VAR x -> [x,y]
     | _ -> [] in
-  match pure with 
+  let x = match pure with 
   TRUE -> []
   | FALSE -> []
   | Neg a -> infer_params a
@@ -144,11 +150,11 @@ let rec infer_params (pure:pure) : param list =
   | GtEq (a,b) ->  (get_variable_terms a Number) @ (get_variable_terms b Number)
   | LtEq (a,b) ->  (get_variable_terms a Number) @ (get_variable_terms b Number)
   (* TODO *)
-  | Eq (a,b) -> (get_variable_terms a Symbol) @ (get_variable_terms b Symbol)
-  | NEq (a,b) -> (get_variable_terms a Symbol) @ (get_variable_terms b Symbol)
+  | Eq (a,b) -> (get_variable_terms a Number) @ (get_variable_terms b Number)
+  | NEq (a,b) -> (get_variable_terms a Number) @ (get_variable_terms b Number)
   | PureOr(a,b) -> (infer_params a) @ (infer_params b)
   | PureAnd(a,b) ->(infer_params a) @ (infer_params b)
-
+  in List.sort_uniq param_compare x
   (*| Pos a -> get_variable_terms a *)
 
 
@@ -173,7 +179,24 @@ let translation (ctl:ctl) : datalog =
       )
     (List.filter (fun x -> match x with  VAR x -> true | _ -> false ) args ) in
   
+
   let rec translation_inner (ctl:ctl) : string * datalog =
+
+    let processPair f1 f2 name (construct_rules: relation -> relation -> relation -> rule list) =
+      let x1,(declarations_f1,rules_f1) = translation_inner f1 in
+      let x2,(declarations_f2,rules_f2) = translation_inner f2 in
+      let f1_params = get_params declarations_f1 in
+      let f2_params = get_params declarations_f2 in
+      let f1_args = get_args rules_f1 in
+      let f2_args = get_args rules_f2 in
+      let decs = List.append declarations_f1 declarations_f2 in
+      let ruls = List.append rules_f1 rules_f2 in
+      let newParams = (List.sort_uniq param_compare (List.append f1_params f2_params)) in
+      let newArgs = process_args (List.append f1_args f2_args) in
+      let newName = name x1 x2 in 
+      newName, ( (newName,newParams) :: decs, ( (construct_rules (newName, newArgs) (x1,f1_args) (x2,f2_args))  @ ruls)) 
+    in
+
     match ctl with 
     | Atom (pName, pure) -> 
       let vars = infer_variables pure in
@@ -192,46 +215,19 @@ let translation (ctl:ctl) : datalog =
         newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Neg (fName,fArgs) ]):: rules)
 
     | Conj (f1 , f2) -> 
-        let x1,(declarations_f1,rules_f1) = translation_inner f1 in
-        let x2,(declarations_f2,rules_f2) = translation_inner f2 in
-        let f1_params = get_params declarations_f1 in
-        let f2_params = get_params declarations_f2 in
-        let f1_args = get_args rules_f1 in
-        let f2_args = get_args rules_f2 in
-        let decs = List.append declarations_f1 declarations_f2 in
-        let ruls = List.append rules_f1 rules_f2 in
-        let newParams = (List.sort_uniq param_compare (List.append f1_params f2_params)) in
-        let newArgs = process_args (List.append f1_args f2_args) in
-        let newName = x1 ^ "_AND_" ^ x2 in
-        newName,( (newName,newParams) :: decs, ( (newName, newArgs) , [Pos(x1,f1_args); Pos(x2,f2_args)] )  :: ruls) 
+        processPair f1 f2 
+        (fun x1 x2 ->  x1 ^ "_AND_" ^ x2) 
+        (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [( (newName, newArgs) , [Pos(x1,f1_args); Pos(x2,f2_args)] ) ])
       
     | Disj (f1,f2) ->
-        let x1,(declarations_f1,rules_f1) = translation_inner f1 in
-        let x2,(declarations_f2,rules_f2) = translation_inner f2 in
-        let f1_params = get_params declarations_f1 in
-        let f2_params = get_params declarations_f2 in
-        let f1_args = get_args rules_f1 in
-        let f2_args = get_args rules_f2 in
-        let decs = List.append declarations_f1 declarations_f2 in
-        let ruls = List.append rules_f1 rules_f2 in
-        let newParams = (List.sort_uniq param_compare (List.append f1_params f2_params)) in
-        let newArgs = process_args (List.append f1_args f2_args) in
-        let newName = x1 ^ "_OR_" ^ x2 in
-        newName,( (newName,newParams) :: decs, ( (newName, newArgs) , [Pos(x1,f1_args)] ) :: ( (newName, newArgs) , [Pos(x2,f2_args)] )  :: ruls) 
+        processPair f1 f2 
+        (fun x1 x2 ->  x1 ^ "_OR_" ^ x2) 
+        (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [ ( (newName, newArgs) , [Pos(x1,f1_args)] ) ; ( (newName, newArgs) , [Pos(x2,f2_args)] ) ]);
       
     | Imply (f1,f2) -> 
-        let x1,(declarations_f1,rules_f1) = translation_inner f1 in
-        let x2,(declarations_f2,rules_f2) = translation_inner f2 in
-        let f1_params = get_params declarations_f1 in
-        let f2_params = get_params declarations_f2 in
-        let f1_args = get_args rules_f1 in
-        let f2_args = get_args rules_f2 in
-        let decs = List.append declarations_f1 declarations_f2 in
-        let ruls = List.append rules_f1 rules_f2 in
-        let newParams = (List.sort_uniq param_compare (List.append f1_params f2_params)) in
-        let newArgs = process_args (List.append f1_args f2_args) in
-        let newName = x1 ^ "_imply_" ^ x2 in
-        newName,( (newName,newParams) :: decs, ( (newName, newArgs) , [Pos(x1,f1_args); Neg(x2,f2_args)] )  :: ruls) 
+        processPair f1 f2 
+        (fun x1 x2 ->  x1 ^ "_IMPLY_" ^ x2) 
+        (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [( (newName, newArgs) , [Pos(x1,f1_args); Neg(x2,f2_args)] ) ])
 
     (* Primary CTL Encoding *)
     | EX f ->   
@@ -240,7 +236,8 @@ let translation (ctl:ctl) : datalog =
         let newName = "EX_" ^ fName in
         let fParams = get_params declarations in
         let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos (fName,fArgs) ]):: rules)
+        let arg = "tempOne" in
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [  Pos("flow", [ VAR "x"; VAR "temp" ] );    Pos (fName,fArgs) ]):: rules)
     
     | AF f ->     
       (* TODO *)
@@ -249,17 +246,9 @@ let translation (ctl:ctl) : datalog =
     
     | EU (f1,f2)->
       (* TODO *) 
-      let x1,(declarations_f1,rules_f1) = translation_inner f1 in
-      let x2,(declarations_f2,rules_f2) = translation_inner f2 in
-      let f1_params = get_params declarations_f1 in
-      let f2_params = get_params declarations_f2 in
-      let f1_args = get_args rules_f1 in
-      let f2_args = get_args rules_f2 in
-      let decs = List.append declarations_f1 declarations_f2 in
-      let ruls = List.append rules_f1 rules_f2 in
-      let newParams = (List.sort_uniq param_compare (List.append f1_params f2_params)) in
-      let newArgs = process_args (List.append f1_args f2_args) in
-        x1 ^ "_EU_" ^ x2, (List.append declarations_f1 declarations_f2, List.append rules_f1 rules_f2)
+      processPair f1 f2 
+      (fun x1 x2 ->  x1 ^ "_EU_" ^ x2) 
+      (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [ ])
 
     | EF f ->     
       let fName,(declarations,rules) = translation_inner f in
@@ -324,6 +313,7 @@ let translation (ctl:ctl) : datalog =
 let tests  = 
   [
     Atom("xIsPos", (Gt(VAR "x", INT 0)));
+    Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
     EX(Atom("y", (Gt(VAR "X", INT 0))));  
   ] 
 
