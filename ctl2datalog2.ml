@@ -1,4 +1,4 @@
-type terms = INT of int | VAR of string       
+type terms = INT of int | VAR of string      
 (*Arithimetic pure formulae*)
 type pure = TRUE
           | FALSE
@@ -67,8 +67,16 @@ let translation (ctl:ctl) : datalog =
     (decls, [rule])
   | _ -> failwith "TBD" 
 
+  (* core, EX, AF, AU, the rest needs to be translated *)
+
 let tests  = 
   [Atom("xIsPos", (Gt(VAR "x", INT 0)))] 
+  (*
+  
+  .decl xIsPos (x:number)
+  IsPos(x) :- x > 0. 
+
+  *)
 
 let main = 
   List.map (fun item -> print_endline (string_of_datalog (translation item))) tests
