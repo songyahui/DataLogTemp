@@ -41,11 +41,11 @@ type body = Pos of relation | Neg of relation | Pure of pure
 type rule = head * (body list) 
 type datalog = decl list * rule list
 
-let rec expand_args (x:string list) = 
+let rec expand_args (sep: string) (x:string list) = 
   match x with 
   [] -> ""
   | [x] -> x
-  | x :: xs -> x ^ "," ^ (expand_args xs)
+  | x :: xs -> x ^ sep ^ (expand_args sep xs)
 
 
 let string_of_term x =     
@@ -61,7 +61,7 @@ let string_of_param x =
 
 let string_of_relation (relation:relation) =
   match relation with
-  (name,vars) -> let variables = expand_args (List.map string_of_term vars) in name ^ "(" ^ variables ^ ")"  
+  (name,vars) -> let variables = expand_args "," (List.map string_of_term vars) in name ^ "(" ^ variables ^ ")"  
 
 let rec string_of_pure (pure:pure) =
   match pure with 
@@ -80,7 +80,7 @@ let rec string_of_pure (pure:pure) =
 
 
 let string_of_bodies (bodies:body list) = 
-  expand_args (List.map (fun body -> match body with
+  expand_args ", " (List.map (fun body -> match body with
   Pos r -> string_of_relation r
   | Neg r -> "!"  ^ string_of_relation r
   | Pure p -> string_of_pure p ) bodies)
@@ -88,7 +88,7 @@ let string_of_bodies (bodies:body list) =
 
 let string_of_decl (decl:decl) =
   match decl with
-  name,args -> ".decl "^ name ^ "(" ^ (expand_args (List.map string_of_param args ))  ^ ");"
+  name,args -> ".decl "^ name ^ "(" ^ (expand_args "," (List.map string_of_param args ))  ^ ");"
 
 let string_of_decls = List.fold_left (fun acc decl -> acc ^ (if acc != "" then "\n" else "") ^ string_of_decl decl ) ""
 
@@ -208,7 +208,7 @@ let translation (ctl:ctl) : datalog =
         let newName = "NOT_" ^ fName in
         let fParams = get_params declarations in
         let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [VAR "__state"]) ;Neg (fName,fArgs) ]):: rules)
 
     | Conj (f1 , f2) -> 
         processPair f1 f2 
@@ -226,6 +226,7 @@ let translation (ctl:ctl) : datalog =
         (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> [( (newName, newArgs) , [Pos(x1,f1Args); Neg(x2,f2Args)] ) ])
 
     (* Primary CTL Encoding *)
+    (* Current status - is monadic but not fully sure if guarded *)
     (* The idea behind this encoding is state encoding is to reuse the previous name when a transition is needed *)
     | EX f ->   
       (* TODO *)  
@@ -284,7 +285,7 @@ let translation (ctl:ctl) : datalog =
       let newName = "AX_" ^  (String.sub fName prefixLen (String.length fName - prefixLen)) in
       let fParams = get_params declarations in
       let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "__state"]);Neg (fName,fArgs) ]):: rules)
     
     | AG f ->
       (* AG f  = !EF !f *)     
@@ -293,7 +294,7 @@ let translation (ctl:ctl) : datalog =
       let newName = "AG_" ^  (String.sub fName prefixLen (String.length fName - prefixLen)) in
       let fParams = get_params declarations in
       let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "__state"]) ;Neg (fName,fArgs) ]):: rules)
 
     | EG f ->
       (* EG f = !AF !f *)     
@@ -302,7 +303,7 @@ let translation (ctl:ctl) : datalog =
       let newName = "EG_" ^  (String.sub fName prefixLen (String.length fName - prefixLen)) in
       let fParams = get_params declarations in
       let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "__state"]) ;Neg (fName,fArgs) ]):: rules)
 
     | AU (f1,f2) ->
       (* f1 AU f2 = not (!f2 EU (!f1 and !f2) ) and AF f2 *)
