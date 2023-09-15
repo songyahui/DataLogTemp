@@ -335,6 +335,7 @@ let tests  =
     EX(Atom("y", (Gt(VAR "x", INT 0))));  
     EF(Atom("y", (Gt(VAR "x", INT 0))));
     EU ((Atom("z", (Gt(VAR "x", INT 0)))), (Atom("k", (LtEq(VAR "x", INT 0)))));
+    EF(AG(Atom ("k", Gt(VAR "x", INT 0))));
   ] 
 
 let main = 
