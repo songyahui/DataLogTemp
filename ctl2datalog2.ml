@@ -306,7 +306,7 @@ let translation (ctl:ctl) : datalog =
       ] in
     let defaultRules = [ 
       ("transFlow", [VAR "x"; VAR "y"] ), [ Pos ("flow", [VAR "x"; VAR "y"]) ] ;
-      ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("flow", [VAR "y"; VAR "z"]) ] 
+      ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("transflow", [VAR "y"; VAR "z"]) ] 
       ] in
       (defaultDecs @ List.rev decs, defaultRules @ List.rev rules)
 
