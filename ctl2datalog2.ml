@@ -257,9 +257,53 @@ let translation (ctl:ctl) : datalog =
         ]@ rules) 
     
     | AF f ->     
-      (* TODO *)
-      let x,(declarations,rules) = translation_inner f in
-      "AF_" ^ x,(declarations,rules)
+      (* Per Gottlob et al.
+
+      AF_P_T(x,z) :- AF_P_T(x,y), !P(y), flow(y,z);
+      AF_P_T(x,y) :- !P(x), flow(x,y);
+      AF_P_S(x) :- AF_P_T(x,x);
+      AF_P_S(x) :- !P(x), flow(x,y), S(y);
+      AF_P(x) :- state(x) !AF_P_S(x);
+
+      The approach here makes y and z first to allow for easier manipulation 
+
+      *)
+      let fName,(declarations,rules) = translation_inner f in
+      let newName = "AF_" ^ fName in
+      let sName = newName ^ "_S" in
+      let tName = newName ^ "_T" in
+      let fParams = get_params declarations in
+      let fArgs = get_args rules in
+      let arg = VAR "tempOne" in
+      let firstArg, fNewArgs = match fArgs with
+        [] -> failwith "confused"
+        | x :: xs -> x, arg :: xs in
+
+      let tArg = VAR "__state_extra" in
+      let tParam = "__state_extra" , Symbol in
+      let tArgs = tArg :: fArgs in
+      let tNewArgs = arg :: fArgs in
+      let tParams = tParam :: fParams in
+
+      let newDeclarations = [
+        (newName,fParams);
+        (sName,fParams);
+        (tName, tParams);
+
+      ] in
+      let newRules = [
+        (newName,fArgs), [Pos("state", [firstArg]); Neg (sName, fArgs)];
+
+        (sName, fArgs), [Pos(tName, firstArg :: firstArg :: List.tl fArgs)];
+        (sName,fArgs), [ Neg(fName, fArgs); Pos("flow", [firstArg; arg]); Pos(sName,fNewArgs)  ];
+
+        (tName, tArgs), [ Neg(fName,fArgs); Pos("flow", [firstArg; tArg] ) ];
+        (tName, tArgs), [ Pos(tName,tNewArgs) ;Neg(fName,fNewArgs); Pos("flow", [arg; tArg] ) ];
+        
+
+      ] in
+      newName,( newDeclarations @ declarations, newRules @ rules)
+ 
     
     | EU (f1,f2)->
       (* TODO *) 
@@ -337,6 +381,7 @@ let tests  =
     EF(Atom("y", (Gt(VAR "x", INT 0))));
     EU ((Atom("z", (Gt(VAR "x", INT 0)))), (Atom("k", (LtEq(VAR "x", INT 0)))));
     EF(AG(Atom ("k", Gt(VAR "x", INT 0))));
+    AF(Atom("y", Gt(VAR "x", INT 0)));
   ] 
 
 let main = 
