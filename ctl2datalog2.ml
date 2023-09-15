@@ -98,14 +98,14 @@ let rec string_of_rules =
 let param_compare (a:param) (b:param) =
   match (a,b) with
   (a_name,a_type), (b_name,b_type) -> 
-    let name_diff = String.compare a_name b_name in
-    if name_diff == 0 then (
+    let nameDiff = String.compare a_name b_name in
+    if nameDiff == 0 then (
       match (a_type, b_type) with
       (Number, Number)
       | (Symbol, Symbol) -> 0
       | (Number,Symbol) -> 1
       | (Symbol,Number) -> -1
-    ) else name_diff
+    ) else nameDiff
 
 let term_compare (a:terms) (b:terms) =
   match (a,b) with
@@ -183,29 +183,25 @@ let translation (ctl:ctl) : datalog =
   let rec translation_inner (ctl:ctl) : string * datalog =
 
     let processPair f1 f2 name (construct_rules: relation -> relation -> relation -> rule list) =
-      let x1,(declarations_f1,rules_f1) = translation_inner f1 in
-      let x2,(declarations_f2,rules_f2) = translation_inner f2 in
-      let f1_params = get_params declarations_f1 in
-      let f2_params = get_params declarations_f2 in
-      let f1_args = get_args rules_f1 in
-      let f2_args = get_args rules_f2 in
-      let decs = List.append declarations_f1 declarations_f2 in
-      let ruls = List.append rules_f1 rules_f2 in
-      let newParams = (List.sort_uniq param_compare (List.append f1_params f2_params)) in
-      let newArgs = process_args (List.append f1_args f2_args) in
+      let x1,(f1Declarations,f1Rules) = translation_inner f1 in
+      let x2,(f2Declarations,f2Rules) = translation_inner f2 in
+      let f1Params = get_params f1Declarations in
+      let f2Params = get_params f2Declarations in
+      let f1Args = get_args f1Rules in
+      let f2Args = get_args f2Rules in
+      let decs = List.append f1Declarations f2Declarations in
+      let ruls = List.append f1Rules f2Rules in
+      let newParams = (List.sort_uniq param_compare (List.append f1Params f2Params)) in
+      let newArgs = process_args (List.append f1Args f2Args) in
       let newName = name x1 x2 in 
-      newName, ( (newName,newParams) :: decs, ( (construct_rules (newName, newArgs) (x1,f1_args) (x2,f2_args))  @ ruls)) 
+      newName, ( (newName,newParams) :: decs, ( (construct_rules (newName, newArgs) (x1,f1Args) (x2,f2Args))  @ ruls)) 
     in
 
     match ctl with 
     | Atom (pName, pure) -> 
-      let vars = infer_variables pure in
-      let params = infer_params pure in
-      let decls = [(pName,params)] in 
-      let head = (pName, vars) in 
-      let bodies = [Pure pure] in 
-      let rule = (head, bodies) in 
-      pName,(decls, [rule])
+      let vars = VAR "__state" :: infer_variables pure in
+      let params =  ("__state" , Number) :: infer_params pure in
+      pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "__state"]) ;Pure pure]) ])
     
     | Neg f -> 
       let fName,(declarations,rules) = translation_inner f in
@@ -217,27 +213,47 @@ let translation (ctl:ctl) : datalog =
     | Conj (f1 , f2) -> 
         processPair f1 f2 
         (fun x1 x2 ->  x1 ^ "_AND_" ^ x2) 
-        (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [( (newName, newArgs) , [Pos(x1,f1_args); Pos(x2,f2_args)] ) ])
+        (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> [( (newName, newArgs) , [Pos(x1,f1Args); Pos(x2,f2Args)] ) ])
       
     | Disj (f1,f2) ->
         processPair f1 f2 
         (fun x1 x2 ->  x1 ^ "_OR_" ^ x2) 
-        (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [ ( (newName, newArgs) , [Pos(x1,f1_args)] ) ; ( (newName, newArgs) , [Pos(x2,f2_args)] ) ]);
+        (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> [ ( (newName, newArgs) , [Pos(x1,f1Args)] ) ; ( (newName, newArgs) , [Pos(x2,f2Args)] ) ]);
       
     | Imply (f1,f2) -> 
         processPair f1 f2 
         (fun x1 x2 ->  x1 ^ "_IMPLY_" ^ x2) 
-        (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [( (newName, newArgs) , [Pos(x1,f1_args); Neg(x2,f2_args)] ) ])
+        (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> [( (newName, newArgs) , [Pos(x1,f1Args); Neg(x2,f2Args)] ) ])
 
     (* Primary CTL Encoding *)
+    (* The idea behind this encoding is state encoding is to reuse the previous name when a transition is needed *)
     | EX f ->   
       (* TODO *)  
       let fName,(declarations,rules) = translation_inner f in
         let newName = "EX_" ^ fName in
         let fParams = get_params declarations in
         let fArgs = get_args rules in
-        let arg = "tempOne" in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [  Pos("flow", [ VAR "x"; VAR "temp" ] );    Pos (fName,fArgs) ]):: rules)
+        let arg = VAR "tempOne" in
+        let firstArg, fNewArgs = match fArgs with
+          [] -> failwith "confused"
+          | x :: xs -> x, arg :: xs in
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [  Pos("flow", [firstArg;arg] );    Pos (fName,fNewArgs) ]):: rules)
+    | EF f ->     
+      let fName,(declarations,rules) = translation_inner f in
+      (* TODO *)
+        let newName = "EF_" ^ fName in
+        let fParams = get_params declarations in
+        let fArgs = get_args rules in
+        let arg = VAR "tempOne" in
+        let firstArg, fNewArgs = match fArgs with
+          [] -> failwith "confused"
+          | x :: xs -> x, arg :: xs in
+        newName,(  (newName,fParams) :: declarations, 
+        [
+          ( (newName,fArgs), [Pos (fName,fArgs) ]);
+          ( (newName,fArgs), [Pos("flow",[firstArg;arg]); Pos(fName,fNewArgs)     ] )
+
+        ]@ rules) 
     
     | AF f ->     
       (* TODO *)
@@ -248,15 +264,16 @@ let translation (ctl:ctl) : datalog =
       (* TODO *) 
       processPair f1 f2 
       (fun x1 x2 ->  x1 ^ "_EU_" ^ x2) 
-      (fun (newName,newArgs) (x1,f1_args) (x2,f2_args) -> [ ])
+      (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> 
+        let arg = VAR "tempOne" in
+        let firstArg, fNewArgs = match newArgs with
+        [] -> failwith "confused"
+        | x :: xs -> x, arg :: xs in
+        [ 
+        (newName,newArgs) , [ Pos(x2,f2Args) ];
+        (newName,newArgs) , [ Pos(x1,f1Args); Pos("flow",[arg;firstArg]); Pos(newName,fNewArgs) ];
+      ])
 
-    | EF f ->     
-      let fName,(declarations,rules) = translation_inner f in
-      (* TODO *)
-        let newName = "EF_" ^ fName in
-        let fParams = get_params declarations in
-        let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos (fName,fArgs) ]):: rules) 
     
       
     (* Derivative rules *)
@@ -299,10 +316,11 @@ let translation (ctl:ctl) : datalog =
         newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos (fName,fArgs) ]):: rules)
 
     in let (decs,rules) = snd (translation_inner ctl) in
-    let defaultDecs = [ 
-      ("state", [ ("x", Number)]);
-      ("flow", [ ("x", Number); ("y", Number) ]);
-      ("transFlow", [ ("x", Number); ("y", Number) ]) 
+    let defaultDecs = [
+      ("entry",     [ ("x", Number)]); 
+      ("state",     [ ("x", Number)]);
+      ("flow",      [ ("x", Number); ("y", Number) ]);
+      ("transFlow", [ ("x", Number); ("y", Number) ]); 
       ] in
     let defaultRules = [ 
       ("transFlow", [VAR "x"; VAR "y"] ), [ Pos ("flow", [VAR "x"; VAR "y"]) ] ;
@@ -314,7 +332,9 @@ let tests  =
   [
     Atom("xIsPos", (Gt(VAR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
-    EX(Atom("y", (Gt(VAR "X", INT 0))));  
+    EX(Atom("y", (Gt(VAR "x", INT 0))));  
+    EF(Atom("y", (Gt(VAR "x", INT 0))));
+    EU ((Atom("z", (Gt(VAR "x", INT 0)))), (Atom("k", (LtEq(VAR "x", INT 0)))));
   ] 
 
 let main = 
