@@ -223,7 +223,10 @@ let translation (ctl:ctl) : datalog =
     | Imply (f1,f2) -> 
         processPair f1 f2 
         (fun x1 x2 ->  x1 ^ "_IMPLY_" ^ x2) 
-        (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> [( (newName, newArgs) , [Pos(x1,f1Args); Neg(x2,f2Args)] ) ])
+        (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> 
+        [ ( (newName, newArgs) , [Pos(x2,f2Args)]);
+          ( (newName, newArgs) , [Neg(x1,f1Args)] )
+        ])
 
     (* Primary CTL Encoding *)
     (* The idea behind this encoding is state encoding is to reuse the previous name when a transition is needed *)
@@ -251,7 +254,7 @@ let translation (ctl:ctl) : datalog =
         newName,(  (newName,fParams) :: declarations, 
         [
           ( (newName,fArgs), [Pos (fName,fArgs) ]);
-          ( (newName,fArgs), [Pos("flow",[firstArg;arg]); Pos(fName,fNewArgs)     ] )
+          ( (newName,fArgs), [Pos("flow",[firstArg;arg]); Pos(newName,fNewArgs)     ] )
 
         ]@ rules) 
     
@@ -374,6 +377,11 @@ let translation (ctl:ctl) : datalog =
   (* core, EX, AF, AU, the rest needs to be translated *)
 
 let tests  = 
+  let xIsValue_1 = Atom("xIsValue_1", (Eq(VAR "x", INT 1))) in 
+  let xIsValue_0 = Atom("xIsValue_0", (Eq(VAR "x", INT 0))) in 
+  let aF_xIsValue_0 = AF(xIsValue_0) in 
+  let xIsValue_1_Imply_AF_xIsValue_0 = Imply (xIsValue_1, aF_xIsValue_0) in 
+  let eG_xIsValue_1_Imply_AF_xIsValue_0 = EG(xIsValue_1_Imply_AF_xIsValue_0) in 
   [
     Atom("xIsPos", (Gt(VAR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
@@ -382,6 +390,7 @@ let tests  =
     EU ((Atom("z", (Gt(VAR "x", INT 0)))), (Atom("k", (LtEq(VAR "x", INT 0)))));
     EF(AG(Atom ("k", Gt(VAR "x", INT 0))));
     AF(Atom("y", Gt(VAR "x", INT 0)));
+    eG_xIsValue_1_Imply_AF_xIsValue_0
   ] 
   (*
   
@@ -391,4 +400,4 @@ let tests  =
   *)
 
 let main = 
-  List.map (fun item -> print_endline (string_of_datalog (translation item))) tests
+  List.map (fun item -> print_endline (string_of_datalog (translation item) ^ "\n")) tests
