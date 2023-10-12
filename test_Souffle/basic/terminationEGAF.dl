@@ -1,0 +1,105 @@
+S(1).S(2).S(3).S(4).S(5).S(6).S(7).S(8).S(9).S(10).S(11).S(12).
+End(12).
+Start(1).
+flow(1, 2).
+flow(2, 3).
+flow(3, 4).
+flow(4, 5).
+flow(5, 6).
+flow(6, 7).
+flow(7, 8).
+
+flow(8, 9).
+flow(9, 10). 
+possible_flow(10, 8). 
+
+flow(10, 11).
+flow(11, 12).
+
+.decl S(x:number)
+.decl Start(x:number)
+.decl End(x:number)
+
+.decl flow(x:number, y:number)
+.decl possible_flow(x:number, y:number)
+.decl AssignConst(x:symbol, y:number, z:number)
+.decl AssignVar(x:symbol, y:symbol, z:number)
+.decl Random(x:symbol, y:number)
+.decl T(x:number, y:number)
+
+
+AssignConst ("x", 0, 1).
+Random ("rho_1", 3).
+AssignVar ("y", "rho_1", 4).
+AssignConst ("x", 1, 5).
+Random ("rho_2", 6).
+AssignVar ("n", "rho_1", 7).
+AssignVar ("n", "n-y", 9).
+AssignConst ("x", 0, 11). 
+
+.decl transFlow   (x:number, y:number)
+.decl xIsValue  (x:number, y:number)
+
+transFlow(x, y) :- flow (x, y).
+transFlow(x, z) :- flow (x, y), transFlow (y, z).
+
+xIsValue(x, y) :- AssignConst ("x", x, y).
+xIsValue(x, y) :- xIsValue(x, loc), flow(loc, y), !AssignConst ("x", _, y).
+
+
+.decl NotFinally_xIsValue_0(x:number)
+.decl AF_xIsValue_0(x:number)      
+.decl xIsValue_1_Imply_AF_xIsValue_0(x:number)       
+.decl G_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
+.decl EG_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
+
+
+T(x, y) :- !xIsValue(0, x), flow (x, y).
+T(x, z) :- T(x, y), !xIsValue(0, y), flow (y, z).
+
+
+
+NotFinally_xIsValue_0 (x) :- T(x, x).
+NotFinally_xIsValue_0 (x) :- !xIsValue(0, x), flow(x, y), NotFinally_xIsValue_0(y). 
+
+
+
+AF_xIsValue_0(x) :- S(x), ! NotFinally_xIsValue_0(x).
+
+xIsValue_1_Imply_AF_xIsValue_0(x):- S(x), ! xIsValue(1, x).
+xIsValue_1_Imply_AF_xIsValue_0(x):- AF_xIsValue_0(x).
+
+
+
+G_xIsValue_1_Imply_AF_xIsValue_0 (x) :- xIsValue_1_Imply_AF_xIsValue_0(x). 
+G_xIsValue_1_Imply_AF_xIsValue_0 (x) :- xIsValue_1_Imply_AF_xIsValue_0(x), flow(x, y), G_xIsValue_1_Imply_AF_xIsValue_0(y).
+
+.decl Not_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
+.decl T1(x:number, y:number)
+.decl NotFinally_Not_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
+.decl AF_Not_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
+
+
+Not_xIsValue_1_Imply_AF_xIsValue_0(x) :- S(x), !xIsValue_1_Imply_AF_xIsValue_0(x).
+
+T1(x, y) :- !Not_xIsValue_1_Imply_AF_xIsValue_0(x), flow (x, y).
+T1(x, z) :- T1(x, y), !Not_xIsValue_1_Imply_AF_xIsValue_0(y), flow (y, z).
+
+
+NotFinally_Not_xIsValue_1_Imply_AF_xIsValue_0 (x):- ! Not_xIsValue_1_Imply_AF_xIsValue_0( x), End(x).
+NotFinally_Not_xIsValue_1_Imply_AF_xIsValue_0 (x):- T1(x, x).
+NotFinally_Not_xIsValue_1_Imply_AF_xIsValue_0 (x):- ! Not_xIsValue_1_Imply_AF_xIsValue_0( x), flow(x, y), NotFinally_Not_xIsValue_1_Imply_AF_xIsValue_0(y).
+
+
+AF_Not_xIsValue_1_Imply_AF_xIsValue_0(x) :- S(x), !NotFinally_Not_xIsValue_1_Imply_AF_xIsValue_0(x).
+
+EG_xIsValue_1_Imply_AF_xIsValue_0 (x) :- Start(x), !AF_Not_xIsValue_1_Imply_AF_xIsValue_0(x).
+
+
+//.output xIsValue(IO=stdout) 
+//.output AF_xIsValue_0(IO=stdout) 
+.output Not_xIsValue_1_Imply_AF_xIsValue_0(IO=stdout) 
+.output EG_xIsValue_1_Imply_AF_xIsValue_0(IO=stdout) 
+
+
+
