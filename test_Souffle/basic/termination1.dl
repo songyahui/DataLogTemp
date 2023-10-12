@@ -1,8 +1,6 @@
 S(1).S(2).S(3).S(4).S(5).S(6).S(7).S(8).S(9).S(10).S(11).S(12).
-Var("x").
-Var("y").
-Var("n").
-Start(4).
+
+Start(1).
 flow(1, 2).
 flow(2, 3).
 flow(3, 4).
@@ -10,33 +8,38 @@ flow(4, 5).
 flow(5, 6).
 flow(6, 7).
 flow(7, 8).
+
 flow(8, 9).
 flow(9, 10). 
-//flow(10, 8). 
+possible_flow(10, 8). 
+
 flow(10, 11).
 flow(11, 12).
-
+flow(12, 2). 
 
 .decl S(x:number)
-.decl Var(x:symbol)
-.decl GT(x:symbol, n:number, loc:number)
 .decl Start(x:number)
 .decl flow(x:number, y:number)
+.decl possible_flow(x:number, y:number)
+
 
 .decl AssignConst(x:symbol, y:number, z:number)
-.decl Eval(x:symbol, y:number, z:number)
-
 .decl AssignVar(x:symbol, y:symbol, z:number)
 .decl Random(x:symbol, y:number)
-.decl T(sym:symbol,x:number, y:number)
+.decl T(x:number, y:number)
+.decl Eval(x:symbol, y:number, z:number)
+
 
 AssignConst ("x", 0, 1).
 Random ("y", 4).
-//AssignConst ("y", 0, 4).
 AssignConst ("x", 1, 5).
 Random ("n", 7).
 AssignVar ("n", "n-y", 9).
 AssignConst ("x", 0, 11). 
+
+.decl transFlow   (x:number, y:number)
+.decl xIsValue  (x:number, y:number)
+
 
 Eval(x, y, l) :- AssignConst (x, y, l).
 Eval(x, y, loc) :- Eval(x, y, l), flow(l, loc), !AssignConst (x, _, loc).
@@ -47,8 +50,10 @@ Eval(sym, 1, loc) :- Random (sym, loc).
 Eval(sym1, v, loc) :- AssignVar (sym1, sym2, loc), Eval(sym2, v, loc).
 
 
-GT(sym, 0, loc):- AssignConst (sym, 1, loc).
-GT(sym, 0, loc):- Random (sym, loc).
+transFlow(x, y) :- flow (x, y).
+transFlow(x, z) :- flow (x, y), transFlow (y, z).
+
+xIsValue(v, y) :- AssignConst ("x", v, y).
 
 
 .decl NotFinally_xIsValue_0(x:number)
@@ -58,17 +63,19 @@ GT(sym, 0, loc):- Random (sym, loc).
 .decl EG_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
 
 
-T(sym, x, y) :- Var(sym), !Eval(sym, 0, x), flow (x, y).
-T(sym, x, z) :- T(sym, x, y), !Eval(sym, 0, y), flow (y, z).
+T(x, y) :- !xIsValue(0, x), flow (x, y).
+T(x, z) :- T(x, y), !xIsValue(0, y), flow (y, z).
 
-NotFinally_xIsValue_0 (l) :- T("x", l, l).
-NotFinally_xIsValue_0 (l) :- !Eval("x", 0, l), flow(l, y), NotFinally_xIsValue_0(y). 
+
+
+NotFinally_xIsValue_0 (x) :- T(x, x).
+NotFinally_xIsValue_0 (x) :- !xIsValue(0, x), flow(x, y), NotFinally_xIsValue_0(y). 
 
 
 
 AF_xIsValue_0(x) :- S(x), ! NotFinally_xIsValue_0(x).
 
-xIsValue_1_Imply_AF_xIsValue_0(x):- S(x), ! Eval("x", 1, x).
+xIsValue_1_Imply_AF_xIsValue_0(x):- S(x), ! xIsValue(1, x).
 xIsValue_1_Imply_AF_xIsValue_0(x):- AF_xIsValue_0(x).
 
 
@@ -80,12 +87,6 @@ G_xIsValue_1_Imply_AF_xIsValue_0 (x) :- xIsValue_1_Imply_AF_xIsValue_0(x), flow(
 .decl T1(x:number, y:number)
 .decl NotFinally_Not_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
 .decl AF_Not_xIsValue_1_Imply_AF_xIsValue_0(x:number)        
-.decl EF_NOT_xIsValue_1_IMPLY_AF_xIsValue_0(x:number)        
-.decl AG_xIsValue_1_IMPLY_AF_xIsValue_0(x:number)        
-
-
-
-
 
 
 Not_xIsValue_1_Imply_AF_xIsValue_0(x) :- S(x), !xIsValue_1_Imply_AF_xIsValue_0(x).
@@ -103,19 +104,10 @@ AF_Not_xIsValue_1_Imply_AF_xIsValue_0(x) :- S(x), !NotFinally_Not_xIsValue_1_Imp
 EG_xIsValue_1_Imply_AF_xIsValue_0 (x) :- Start(x), !AF_Not_xIsValue_1_Imply_AF_xIsValue_0(x).
 
 
-EF_NOT_xIsValue_1_IMPLY_AF_xIsValue_0(loc) :- flow(loc,tempOne), EF_NOT_xIsValue_1_IMPLY_AF_xIsValue_0(tempOne). 
-EF_NOT_xIsValue_1_IMPLY_AF_xIsValue_0(loc) :- Not_xIsValue_1_Imply_AF_xIsValue_0(loc).
-AG_xIsValue_1_IMPLY_AF_xIsValue_0(loc) :- Start(loc), !EF_NOT_xIsValue_1_IMPLY_AF_xIsValue_0(loc).
-
-
-//.output Eval(IO=stdout) 
+//.output xIsValue(IO=stdout) 
 //.output AF_xIsValue_0(IO=stdout) 
 //.output xIsValue_1_Imply_AF_xIsValue_0(IO=stdout) 
 .output EG_xIsValue_1_Imply_AF_xIsValue_0(IO=stdout) 
-//.output AG_xIsValue_1_IMPLY_AF_xIsValue_0(IO=stdout) 
-
-
-
 
 
 
