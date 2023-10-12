@@ -93,7 +93,7 @@ let string_of_decl (decl:decl) =
 let string_of_decls = List.fold_left (fun acc decl -> acc ^ (if acc != "" then "\n" else "") ^ string_of_decl decl ) ""
 
 let rec string_of_rules =  
-  List.fold_left (fun acc (head,bodies) -> acc ^ (if acc != "" then "\n" else "") ^ string_of_relation head ^ " :- " ^ string_of_bodies bodies ^ ";" ) ""
+  List.fold_left (fun acc (head,bodies) -> acc ^ (if acc != "" then "\n" else "") ^ string_of_relation head ^ " :- " ^ string_of_bodies bodies ^ "." ) ""
 
 let param_compare (a:param) (b:param) =
   match (a,b) with
@@ -199,16 +199,16 @@ let translation (ctl:ctl) : datalog =
 
     match ctl with 
     | Atom (pName, pure) -> 
-      let vars = VAR "__state" :: infer_variables pure in
-      let params =  ("__state" , Number) :: infer_params pure in
-      pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "__state"]) ;Pure pure]) ])
+      let vars = VAR "loc" :: infer_variables pure in
+      let params =  ("loc" , Number) :: infer_params pure in
+      pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ;Pure pure]) ])
     
     | Neg f -> 
       let fName,(declarations,rules) = translation_inner f in
         let newName = "NOT_" ^ fName in
         let fParams = get_params declarations in
         let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [VAR "__state"]) ;Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [VAR "loc"]) ;Neg (fName,fArgs) ]):: rules)
 
     | Conj (f1 , f2) -> 
         processPair f1 f2 
@@ -330,7 +330,7 @@ let translation (ctl:ctl) : datalog =
       let newName = "AX_" ^  (String.sub fName prefixLen (String.length fName - prefixLen)) in
       let fParams = get_params declarations in
       let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "__state"]);Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "loc"]);Neg (fName,fArgs) ]):: rules)
     
     | AG f ->
       (* AG f  = !EF !f *)     
@@ -339,7 +339,7 @@ let translation (ctl:ctl) : datalog =
       let newName = "AG_" ^  (String.sub fName prefixLen (String.length fName - prefixLen)) in
       let fParams = get_params declarations in
       let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "__state"]) ;Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "loc"]) ;Neg (fName,fArgs) ]):: rules)
 
     | EG f ->
       (* EG f = !AF !f *)     
@@ -348,7 +348,7 @@ let translation (ctl:ctl) : datalog =
       let newName = "EG_" ^  (String.sub fName prefixLen (String.length fName - prefixLen)) in
       let fParams = get_params declarations in
       let fArgs = get_args rules in
-        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "__state"]) ;Neg (fName,fArgs) ]):: rules)
+        newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos("state", [ VAR "loc"]) ;Neg (fName,fArgs) ]):: rules)
 
     | AU (f1,f2) ->
       (* f1 AU f2 = not (!f2 EU (!f1 and !f2) ) and AF f2 *)
@@ -382,6 +382,8 @@ let tests  =
   let aF_xIsValue_0 = AF(xIsValue_0) in 
   let xIsValue_1_Imply_AF_xIsValue_0 = Imply (xIsValue_1, aF_xIsValue_0) in 
   let eG_xIsValue_1_Imply_AF_xIsValue_0 = EG(xIsValue_1_Imply_AF_xIsValue_0) in 
+  let aG_xIsValue_1_Imply_AF_xIsValue_0 = AG(xIsValue_1_Imply_AF_xIsValue_0) in 
+
   [
     Atom("xIsPos", (Gt(VAR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
@@ -390,7 +392,9 @@ let tests  =
     EU ((Atom("z", (Gt(VAR "x", INT 0)))), (Atom("k", (LtEq(VAR "x", INT 0)))));
     EF(AG(Atom ("k", Gt(VAR "x", INT 0))));
     AF(Atom("y", Gt(VAR "x", INT 0)));
-    eG_xIsValue_1_Imply_AF_xIsValue_0
+    eG_xIsValue_1_Imply_AF_xIsValue_0;
+    aG_xIsValue_1_Imply_AF_xIsValue_0
+
   ] 
   (*
   
