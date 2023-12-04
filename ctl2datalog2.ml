@@ -71,7 +71,7 @@ let rec string_of_pure (pure:pure) =
   | Lt (a,b) ->  "(" ^ (string_of_term a) ^ " < " ^ (string_of_term b) ^ ")"
   | GtEq (a,b) ->  "(" ^ (string_of_term a) ^ " >= " ^ (string_of_term b) ^ ")"
   | LtEq (a,b) ->  "(" ^ (string_of_term a) ^ " <= " ^ (string_of_term b) ^ ")"
-  | Eq (a,b) -> "(" ^ (string_of_term a) ^ " == " ^ (string_of_term b) ^ ")"
+  | Eq (a,b) -> "(" ^ (string_of_term a) ^ " = " ^ (string_of_term b) ^ ")"
   | NEq (a,b) -> "(" ^ (string_of_term a) ^ " != " ^ (string_of_term b) ^ ")"
   | PureOr(a,b) -> "(" ^ (string_of_pure a) ^ " || " ^ (string_of_pure b) ^ ")"
   | PureAnd(a,b) -> "(" ^ (string_of_pure a) ^ " && " ^ (string_of_pure b) ^ ")"
@@ -88,7 +88,7 @@ let string_of_bodies (bodies:body list) =
 
 let string_of_decl (decl:decl) =
   match decl with
-  name,args -> ".decl "^ name ^ "(" ^ (expand_args "," (List.map string_of_param args ))  ^ ");"
+  name,args -> ".decl "^ name ^ "(" ^ (expand_args "," (List.map string_of_param args ))  ^ ")"
 
 let string_of_decls = List.fold_left (fun acc decl -> acc ^ (if acc != "" then "\n" else "") ^ string_of_decl decl ) ""
 
@@ -159,28 +159,42 @@ let rec infer_params (pure:pure) : param list =
 
 
 
-let translation (ctl:ctl) : datalog = 
-  let get_params (declarations: decl list) =
+let rec translation (ctl:ctl) : string * datalog = 
+  let fname, (decs,rules) = (translation_inner ctl) in
+  let defaultDecs = [
+    ("entry",     [ ("x", Number)]); 
+    ("state",     [ ("x", Number)]);
+    ("flow",      [ ("x", Number); ("y", Number) ]);
+    ("transFlow", [ ("x", Number); ("y", Number) ]); 
+    ] in
+  let defaultRules = [ 
+    ("transFlow", [VAR "x"; VAR "y"] ), [ Pos ("flow", [VAR "x"; VAR "y"]) ] ;
+    ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("transflow", [VAR "y"; VAR "z"]) ] 
+    ] in
+    fname, (defaultDecs @ List.rev decs, defaultRules @ List.rev rules)
+
+  
+and get_params (declarations: decl list) =
     match declarations with
     [] -> []
-    | x :: xs -> snd x in
+    | x :: xs -> snd x
 
-  let get_args (rules: rule list) =
+and get_args (rules: rule list) =
     match rules with
     | [] -> []
-    | x::xs -> snd (fst x) in
+    | x::xs -> snd (fst x) 
 
-  let process_args (args:terms list) =
+and process_args (args:terms list) =
     List.sort_uniq 
     (fun x y -> 
       match (x,y) with
       | (VAR x, VAR y) -> String.compare x y
       | _ -> failwith "Arguments should only be variables"
       )
-    (List.filter (fun x -> match x with  VAR x -> true | _ -> false ) args ) in
-  
+    (List.filter (fun x -> match x with  VAR x -> true | _ -> false ) args ) 
 
-  let rec translation_inner (ctl:ctl) : string * datalog =
+
+and translation_inner (ctl:ctl) : string * datalog =
 
     let processPair f1 f2 name (construct_rules: relation -> relation -> relation -> rule list) =
       let x1,(f1Declarations,f1Rules) = translation_inner f1 in
@@ -361,19 +375,7 @@ let translation (ctl:ctl) : datalog =
       let fArgs = get_args rules in
         newName,(  (newName,fParams) :: declarations, ( (newName,fArgs), [Pos (fName,fArgs) ]):: rules)
 
-    in let (decs,rules) = snd (translation_inner ctl) in
-    let defaultDecs = [
-      ("entry",     [ ("x", Number)]); 
-      ("state",     [ ("x", Number)]);
-      ("flow",      [ ("x", Number); ("y", Number) ]);
-      ("transFlow", [ ("x", Number); ("y", Number) ]); 
-      ] in
-    let defaultRules = [ 
-      ("transFlow", [VAR "x"; VAR "y"] ), [ Pos ("flow", [VAR "x"; VAR "y"]) ] ;
-      ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("transflow", [VAR "y"; VAR "z"]) ] 
-      ] in
-      (defaultDecs @ List.rev decs, defaultRules @ List.rev rules)
-
+    
   (* core, EX, AF, AU, the rest needs to be translated *)
 
 let tests  = 
@@ -383,6 +385,7 @@ let tests  =
   let xIsValue_1_Imply_AF_xIsValue_0 = Imply (xIsValue_1, aF_xIsValue_0) in 
   let eG_xIsValue_1_Imply_AF_xIsValue_0 = EG(xIsValue_1_Imply_AF_xIsValue_0) in 
   let aG_xIsValue_1_Imply_AF_xIsValue_0 = AG(xIsValue_1_Imply_AF_xIsValue_0) in 
+  let eF_terminate  = EF(Atom("terminating", (Eq(VAR "term", INT 1)))) in 
 
   [
     Atom("xIsPos", (Gt(VAR "x", INT 0)));
@@ -393,7 +396,8 @@ let tests  =
     EF(AG(Atom ("k", Gt(VAR "x", INT 0))));
     AF(Atom("y", Gt(VAR "x", INT 0)));
     eG_xIsValue_1_Imply_AF_xIsValue_0;
-    aG_xIsValue_1_Imply_AF_xIsValue_0
+    aG_xIsValue_1_Imply_AF_xIsValue_0;
+    eF_terminate
 
   ] 
   (*
@@ -404,4 +408,8 @@ let tests  =
   *)
 
 let main = 
-  List.map (fun item -> print_endline (string_of_datalog (translation item) ^ "\n")) tests
+  List.map (fun item -> 
+    let fname, program = (translation item) in 
+    print_endline (string_of_datalog program  ^ "\n");
+    print_endline (".output "^ fname ^"(IO=stdout)\n")
+    ) tests

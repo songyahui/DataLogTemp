@@ -1,0 +1,39 @@
+
+/**
+ * Samuel Ueltschi: example for potential termination
+ *
+ * -ctl "EF{exit: true}"
+
+
+int main() {
+    int term; 
+    int i;
+    int x;
+    int y;
+    y = 1;
+    i = ?;
+    x = ?;
+
+    if (i > 10) {
+        x = 1;
+    }     
+    while (x == y) { }
+    
+    term = 1; 
+    return 0;
+}
+*/
+
+.decl entry(x:number)
+.decl state(x:number)
+.decl flow(x:number,y:number)
+.decl transFlow(x:number,y:number)
+.decl terminating(loc:number,term:number)
+.decl EF_terminating(loc:number,term:number)
+transFlow(x,y) :- flow(x,y).
+transFlow(x,z) :- flow(x,y), transflow(y,z).
+terminating(loc,term) :- state(loc), (term = 1).
+EF_terminating(loc,term) :- flow(loc,tempOne), EF_terminating(tempOne,term).
+EF_terminating(loc,term) :- terminating(loc,term).
+
+.output EF_terminating(IO=stdout)

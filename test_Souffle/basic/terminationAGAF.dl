@@ -40,7 +40,8 @@ Possibly_LT(sym, 1, loc) :- Var(sym), S(loc), !AssignConst(sym, 1, loc).
 AssignConst ("x", 0, 1).
 
 //Random ("y", 4).
-AssignConst ("y", 0, 4).
+AssignConst ("y", 1, 4).
+//AssignConst ("y", 1, 4).
 
 AssignConst ("x", 1, 5).
 Random ("n", 7).
