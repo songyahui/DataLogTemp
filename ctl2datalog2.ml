@@ -81,9 +81,24 @@ let rec string_of_pure (pure:pure) =
 
 let string_of_bodies (bodies:body list) = 
   expand_args ", " (List.map (fun body -> match body with
-  Pos r -> string_of_relation r
+    Pos r -> string_of_relation r
   | Neg r -> "!"  ^ string_of_relation r
-  | Pure p -> string_of_pure p ) bodies)
+  (*| Pure (Eq(t1, t2)) -> 
+          | Gt of terms * terms
+          | Lt of terms * terms
+          | GtEq of terms * terms
+          | LtEq of terms * terms
+          | Eq of terms * terms
+          | NEq of terms * terms
+          | PureOr of pure * pure
+          | PureAnd of pure * pure
+          | Neg of pure
+  *)
+  | Pure p -> string_of_pure p 
+
+  
+  
+  ) bodies)
 
 
 let string_of_decl (decl:decl) =
@@ -162,14 +177,18 @@ let rec infer_params (pure:pure) : param list =
 let rec translation (ctl:ctl) : string * datalog = 
   let fname, (decs,rules) = (translation_inner ctl) in
   let defaultDecs = [
-    ("entry",     [ ("x", Number)]); 
+    ("entry",     [ ("x", Number)]);  
+    ("end",       [ ("x", Number)]); 
+    ("valuation", [ ("x", Symbol); ("loc", Number); ("n", Number)]);
+    ("assign",    [ ("x", Symbol); ("loc", Number); ("n", Number)]);
+    (*("assignNonDetermine",    [ ("x", Symbol); ("loc", Number)]);*)
     ("state",     [ ("x", Number)]);
     ("flow",      [ ("x", Number); ("y", Number) ]);
     ("transFlow", [ ("x", Number); ("y", Number) ]); 
     ] in
   let defaultRules = [ 
     ("transFlow", [VAR "x"; VAR "y"] ), [ Pos ("flow", [VAR "x"; VAR "y"]) ] ;
-    ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("transflow", [VAR "y"; VAR "z"]) ] 
+    ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("transFlow", [VAR "y"; VAR "z"]) ] 
     ] in
     fname, (defaultDecs @ List.rev decs, defaultRules @ List.rev rules)
 
@@ -410,6 +429,6 @@ let tests  =
 let main = 
   List.map (fun item -> 
     let fname, program = (translation item) in 
-    print_endline (string_of_datalog program  ^ "\n");
+    print_endline (string_of_datalog program);
     print_endline (".output "^ fname ^"(IO=stdout)\n")
     ) tests
