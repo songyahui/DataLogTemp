@@ -10,14 +10,16 @@
 // -ctl "AF{resp > 5}"
 // -precondition "c > 5"
 
-int c; // assume c > 0
-int servers = 4;
-int resp = 0;
-int curr_serv = servers;
+int _nondet_int() {}
 
 void main() {
+  int c; // assume c > 0
+  int servers = 4;
+  int resp = 0;
+  int curr_serv = servers;
+
   while(curr_serv > 0) {
-    if(?) {
+    if(_nondet_int()) {
       c--; curr_serv--;
       resp++;
     } else if (c < curr_serv) {
@@ -26,4 +28,3 @@ void main() {
   }
   while(1) { int ddd; ddd=ddd; }
 }
-

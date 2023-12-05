@@ -371,6 +371,9 @@ and translation_inner (ctl:ctl) : string * datalog =
         (newName,fArgs), [Pos("state", [firstArg]); Neg (sName, fArgs)];
 
         (sName, fArgs), [Pos(tName, firstArg :: firstArg :: List.tl fArgs)];
+        (* for finite traces *)
+        (sName,fArgs), [ Neg(fName, fArgs); Pos("end", [firstArg])]; 
+        (* for infinite traces *)
         (sName,fArgs), [ Neg(fName, fArgs); Pos("flow", [firstArg; arg]); Pos(sName,fNewArgs)  ];
 
         (tName, tArgs), [ Neg(fName,fArgs); Pos("flow", [firstArg; tArg] ) ];
@@ -447,6 +450,9 @@ let tests  =
   let aG_xIsValue_1_Imply_AF_xIsValue_0 = AG(xIsValue_1_Imply_AF_xIsValue_0) in 
   let eF_terminate  = EF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
   let aF_terminate  = AF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
+  let aF_yIsValue_1 = AF(Atom("yIsValue_1", (Eq(STR "y", INT 1)))) in 
+  let eF_yIsValue_1 = EF(Atom("yIsValue_1", (Eq(STR "y", INT 1)))) in 
+
   [
     (*Atom("xIsPos", (Gt(STR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
@@ -458,7 +464,9 @@ let tests  =
     eG_xIsValue_1_Imply_AF_xIsValue_0;
     aG_xIsValue_1_Imply_AF_xIsValue_0; *)
     eF_terminate;
-    aF_terminate
+    aF_terminate;
+    aF_yIsValue_1;
+    eF_yIsValue_1
     
 
   ] 

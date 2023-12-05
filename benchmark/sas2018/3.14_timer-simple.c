@@ -6,7 +6,7 @@
 int timer_1;
 int output_1;
 	
-void main()
+int main()
 {
 	timer_1 = 0;
 	output_1 = 0;

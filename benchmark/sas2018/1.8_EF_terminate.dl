@@ -4,7 +4,7 @@
  *
  * -ctl "EF{exit: true}"
 
-
+int _nondet_int() {}
 int main() {
     int term = 0; 
     int i;

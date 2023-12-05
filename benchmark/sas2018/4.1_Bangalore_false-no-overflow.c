@@ -4,16 +4,14 @@
  * Adapted from the example Bangalore_true-termination.c
  */
 
-typedef enum {false, true} bool;
-
-extern int __VERIFIER_nondet_int(void);
+int _nondet_int() {}
 
 int main()
 {
     int x;
     int y;
-    x = __VERIFIER_nondet_int();
-    y = __VERIFIER_nondet_int();
+    x = _nondet_int();
+    y = _nondet_int();
 	if (y < 1) {
 	    while (x >= 0) {
 	    	x = x - y;
