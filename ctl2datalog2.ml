@@ -1,4 +1,4 @@
-type terms = INT of int | STR of string | VAR of string       
+type terms = INT of int | STR of string | VAR of string | Any   
 (*Arithimetic pure formulae*)
 type pure = TRUE
           | FALSE
@@ -53,6 +53,7 @@ let string_of_term x =
   INT x -> Int.to_string x
 | VAR x -> x 
 | STR x -> "\"" ^ x ^ "\""
+| Any -> "_"
 
 let string_of_param x =     
   match x with
@@ -188,7 +189,13 @@ let rec translation (ctl:ctl) : string * datalog =
     ] in
   let defaultRules = [ 
     ("transFlow", [VAR "x"; VAR "y"] ), [ Pos ("flow", [VAR "x"; VAR "y"]) ] ;
-    ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("transFlow", [VAR "y"; VAR "z"]) ] 
+    ("transFlow", [VAR "x"; VAR "z"] ), [ Pos ("flow", [VAR "x"; VAR "y"]); Pos ("transFlow", [VAR "y"; VAR "z"]) ];
+    
+    ("valuation", [VAR "x"; VAR "loc"; VAR "n"] ), [ Pos ("assign", [VAR "x"; VAR "loc"; VAR "n"]) ] ;
+    ("valuation", [VAR "x"; VAR "loc"; VAR "n"] ), 
+      [ Pos ("valuation", [VAR "x"; VAR "locTemp"; VAR "n"] );  
+        Pos ("flow", [VAR "locTemp"; VAR "loc"]); 
+        Neg ("assign", [VAR "x"; VAR "loc"; Any]) ] ;
     ] in
     fname, (defaultDecs @ List.rev decs, defaultRules @ List.rev rules)
 
@@ -234,7 +241,22 @@ and translation_inner (ctl:ctl) : string * datalog =
     | Atom (pName, pure) -> 
       let vars = VAR "loc" :: infer_variables pure in
       let params =  ("loc" , Number) :: infer_params pure in
-      pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ;Pure pure]) ])
+      (match pure with 
+      | Gt(VAR x, INT n ) -> 
+        let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Gt(VAR (x^"_v"), INT n ))]) ])
+      | Eq(VAR x, INT n ) -> 
+        let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Eq(VAR (x^"_v"), INT n ))]) ])
+
+      | _ ->  pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; Pure pure]) ])
+      )
+
+    (*| Atom (pName, pure) -> 
+      let vars = VAR "loc" :: infer_variables pure in
+      let params =  ("loc" , Number) :: infer_params pure in
+      pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; Pure pure]) ])
+    *)
     
     | Neg f -> 
       let fName,(declarations,rules) = translation_inner f in
@@ -404,7 +426,7 @@ let tests  =
   let xIsValue_1_Imply_AF_xIsValue_0 = Imply (xIsValue_1, aF_xIsValue_0) in 
   let eG_xIsValue_1_Imply_AF_xIsValue_0 = EG(xIsValue_1_Imply_AF_xIsValue_0) in 
   let aG_xIsValue_1_Imply_AF_xIsValue_0 = AG(xIsValue_1_Imply_AF_xIsValue_0) in 
-  let eF_terminate  = EF(Atom("terminating", (Eq(VAR "term", INT 1)))) in 
+  let eF_terminate  = EF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
 
   [
     Atom("xIsPos", (Gt(VAR "x", INT 0)));
@@ -419,12 +441,6 @@ let tests  =
     eF_terminate
 
   ] 
-  (*
-  
-  .decl xIsPos (x:number)
-  IsPos(x) :- x > 0. 
-
-  *)
 
 let main = 
   List.map (fun item -> 

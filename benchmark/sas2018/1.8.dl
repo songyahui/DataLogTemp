@@ -28,12 +28,14 @@ entry(8). end(24).
 state(8). state(9). state(10). state(11). state(12). state(13). state(14). state(15).
 state(17). state(18). state(20). state(22). state(23). 
 flow (8, 9). flow (9, 10). flow (10, 11). flow (11, 12). flow (12, 13). flow (13, 14). flow (14, 15). flow (15, 17).
+
 flow (17, 18) :- valuation("i", 17, x_v), x_v>10.
 flow (18, 20) :- valuation("i", 17, x_v), x_v>10.
 flow (17, 19) :- valuation("i", 17, x_v), x_v<=10.
 flow (19, 20) :- valuation("i", 17, x_v), x_v<=10.
 flow (20, 20) :- valuation("x", 20, x_v), valuation("y", 20, y_v), x_v=y_v.
 flow (20, 22) :- valuation("x", 20, x_v), valuation("y", 20, y_v), x_v!=y_v. 
+
 flow (22, 23). 
 flow (23, 24).
 
@@ -46,7 +48,21 @@ assign("term", 22, 1).
 assign("i", 14, 11). assign("i", 14, 10).
 assign("x", 15, 5). assign("x", 15, 1).
 
+.decl entry(x:number)
+.decl end(x:number)
+.decl valuation(x:symbol,loc:number,n:number)
+.decl assign(x:symbol,loc:number,n:number)
+.decl state(x:number)
+.decl flow(x:number,y:number)
+.decl transFlow(x:number,y:number)
+.decl terminating(loc:number,term:number)
+.decl EF_terminating(loc:number,term:number)
+transFlow(x,y) :- flow(x,y).
+transFlow(x,z) :- flow(x,y), transFlow(y,z).
+valuation(x,loc,n) :- assign(x,loc,n).
+valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_).
 
+/*
 valuation(x, loc, n) :- assign(x, loc, n).
 valuation(x, loc, n) :- valuation(x, loc1, n), flow(loc1, loc), !assign(x, loc, _).
 
@@ -72,3 +88,4 @@ EF_terminating (loc) :- entry(loc), EF_terminating_aux(loc). // TBD: add the ent
 .output terminating(IO=stdout)
 .output valuation(IO=stdout)
 .output flow(IO=stdout)
+*/
