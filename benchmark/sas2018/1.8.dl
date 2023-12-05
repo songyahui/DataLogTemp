@@ -45,27 +45,24 @@ assign("term", 9, 0).
 assign("term", 22, 1).
 
 
-assign("i", 14, 11). assign("i", 14, 10).
-assign("x", 15, 5). assign("x", 15, 1).
+/* *********************************************************************
+General NOTE: 
+This test case checks the terminating property of a program, which 
+is explicitly marked by "if term=1 is reachable". 
+i) the program terminates if x !=1 at line 20
+ii) does NOT terminate    if x = 1 at line 20. 
+So the valuation of i and x matters. 
+********************************************************************* */
+/* *********************************************************************
+Repair NOTE: 
+We want to termination property to hold. To repair: 
+1) change assign("i", 14, 11) to assign("i", 14, 10).
+2) add assign("i", 14, 10). directly
+3) change assign("y", 13, 1) to assign("y", 13, 3).  
+********************************************************************* */
 
-.decl entry(x:number)
-.decl end(x:number)
-.decl valuation(x:symbol,loc:number,n:number)
-.decl assign(x:symbol,loc:number,n:number)
-.decl state(x:number)
-.decl flow(x:number,y:number)
-.decl transFlow(x:number,y:number)
-.decl terminating(loc:number,term:number)
-.decl EF_terminating(loc:number,term:number)
-transFlow(x,y) :- flow(x,y).
-transFlow(x,z) :- flow(x,y), transFlow(y,z).
-valuation(x,loc,n) :- assign(x,loc,n).
-valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_).
-
-/*
-valuation(x, loc, n) :- assign(x, loc, n).
-valuation(x, loc, n) :- valuation(x, loc1, n), flow(loc1, loc), !assign(x, loc, _).
-
+assign("i", 14, 11). //assign("i", 14, 10).
+assign("x", 15, 5). //assign("x", 15, 1).
 
 .decl entry(x:number)
 .decl end(x:number)
@@ -76,16 +73,13 @@ valuation(x, loc, n) :- valuation(x, loc1, n), flow(loc1, loc), !assign(x, loc, 
 .decl transFlow(x:number,y:number)
 .decl terminating(loc:number)
 .decl EF_terminating(loc:number)
-.decl EF_terminating_aux(loc:number)
-
+.decl EF_terminatingFinal(loc:number)
 transFlow(x,y) :- flow(x,y).
 transFlow(x,z) :- flow(x,y), transFlow(y,z).
-terminating(loc) :- state(loc), valuation("term", loc, 1).
-EF_terminating_aux(loc) :- flow(loc,tempOne), EF_terminating_aux(tempOne).
-EF_terminating_aux(loc) :- state(loc), terminating(loc). // TBD: add the entry atom. 
-EF_terminating (loc) :- entry(loc), EF_terminating_aux(loc). // TBD: add the entry atom. 
-.output EF_terminating(IO=stdout)
-.output terminating(IO=stdout)
-.output valuation(IO=stdout)
-.output flow(IO=stdout)
-*/
+valuation(x,loc,n) :- assign(x,loc,n).
+valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_).
+terminating(loc) :- state(loc), valuation("term",loc,term_v), (term_v = 1).
+EF_terminating(loc) :- flow(loc,tempOne), EF_terminating(tempOne).
+EF_terminating(loc) :- terminating(loc).
+EF_terminatingFinal(loc) :- entry(loc), EF_terminating(loc).
+.output EF_terminatingFinal(IO=stdout)

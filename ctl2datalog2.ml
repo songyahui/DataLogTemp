@@ -197,6 +197,25 @@ let rec translation (ctl:ctl) : string * datalog =
         Pos ("flow", [VAR "locTemp"; VAR "loc"]); 
         Neg ("assign", [VAR "x"; VAR "loc"; Any]) ] ;
     ] in
+
+    
+    (**********************************************************************
+    The following code is to add the top level rule to only show the 
+    reslts on the entry pointes. For example, if the query is: 
+    EF_terminating(loc); then it will be added with the following EF_terminatingFinal rule 
+    EF_terminatingFinal(loc) :- entry(loc), EF_terminating(loc).     
+    --- Yahui Song
+    **********************************************************************)
+    let decs, rules  = 
+    (match rules with 
+    | ((name, [VAR "loc"]), _)::_ -> 
+      let nameFinal = name^"Final" in 
+      let finaDecl = (nameFinal,     [ ("loc", Number)]) in 
+      let finalRule = ((nameFinal, [VAR "loc"]), [Pos("entry",  [VAR "loc"]) ; Pos (name, [VAR "loc"])]) in 
+      finaDecl::decs,  finalRule::rules
+    | _ -> decs, rules
+    ) in 
+
     fname, (defaultDecs @ List.rev decs, defaultRules @ List.rev rules)
 
   
@@ -242,10 +261,10 @@ and translation_inner (ctl:ctl) : string * datalog =
       let vars = VAR "loc" :: infer_variables pure in
       let params =  ("loc" , Number) :: infer_params pure in
       (match pure with 
-      | Gt(VAR x, INT n ) -> 
+      | Gt(STR x, INT n ) -> 
         let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
         pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Gt(VAR (x^"_v"), INT n ))]) ])
-      | Eq(VAR x, INT n ) -> 
+      | Eq(STR x, INT n ) -> 
         let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
         pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Eq(VAR (x^"_v"), INT n ))]) ])
 
@@ -420,8 +439,8 @@ and translation_inner (ctl:ctl) : string * datalog =
   (* core, EX, AF, AU, the rest needs to be translated *)
 
 let tests  = 
-  let xIsValue_1 = Atom("xIsValue_1", (Eq(VAR "x", INT 1))) in 
-  let xIsValue_0 = Atom("xIsValue_0", (Eq(VAR "x", INT 0))) in 
+  let xIsValue_1 = Atom("xIsValue_1", (Eq(STR "x", INT 1))) in 
+  let xIsValue_0 = Atom("xIsValue_0", (Eq(STR "x", INT 0))) in 
   let aF_xIsValue_0 = AF(xIsValue_0) in 
   let xIsValue_1_Imply_AF_xIsValue_0 = Imply (xIsValue_1, aF_xIsValue_0) in 
   let eG_xIsValue_1_Imply_AF_xIsValue_0 = EG(xIsValue_1_Imply_AF_xIsValue_0) in 
@@ -429,7 +448,7 @@ let tests  =
   let eF_terminate  = EF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
 
   [
-    Atom("xIsPos", (Gt(VAR "x", INT 0)));
+    (*Atom("xIsPos", (Gt(STR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
     EX(Atom("y", (Gt(VAR "x", INT 0))));  
     EF(Atom("y", (Gt(VAR "x", INT 0))));
@@ -437,8 +456,9 @@ let tests  =
     EF(AG(Atom ("k", Gt(VAR "x", INT 0))));
     AF(Atom("y", Gt(VAR "x", INT 0)));
     eG_xIsValue_1_Imply_AF_xIsValue_0;
-    aG_xIsValue_1_Imply_AF_xIsValue_0;
+    aG_xIsValue_1_Imply_AF_xIsValue_0; *)
     eF_terminate
+    
 
   ] 
 
@@ -446,5 +466,6 @@ let main =
   List.map (fun item -> 
     let fname, program = (translation item) in 
     print_endline (string_of_datalog program);
-    print_endline (".output "^ fname ^"(IO=stdout)\n")
+    (* Here is printing the datalog query command *)
+    print_endline (".output "^ fname ^"Final(IO=stdout)\n")
     ) tests
