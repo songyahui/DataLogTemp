@@ -84,17 +84,6 @@ let string_of_bodies (bodies:body list) =
   expand_args ", " (List.map (fun body -> match body with
     Pos r -> string_of_relation r
   | Neg r -> "!"  ^ string_of_relation r
-  (*| Pure (Eq(t1, t2)) -> 
-          | Gt of terms * terms
-          | Lt of terms * terms
-          | GtEq of terms * terms
-          | LtEq of terms * terms
-          | Eq of terms * terms
-          | NEq of terms * terms
-          | PureOr of pure * pure
-          | PureAnd of pure * pure
-          | Neg of pure
-  *)
   | Pure p -> string_of_pure p 
 
   
@@ -260,26 +249,26 @@ and translation_inner (ctl:ctl) : string * datalog =
     | Atom (pName, pure) -> 
       let vars = VAR "loc" :: infer_variables pure in
       let params =  ("loc" , Number) :: infer_params pure in
+      let valuationAtom var = Pos ("valuation", [STR var; VAR "loc"; VAR (var^"_v")] ) in 
       (match pure with 
       | Gt(STR x, INT n ) -> 
-        let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
-        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Gt(VAR (x^"_v"), INT n ))]) ])
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom x; Pure (Gt(VAR (x^"_v"), INT n ))]) ])
+      | GtEq(STR x, INT n ) -> 
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom x; Pure (GtEq(VAR (x^"_v"), INT n ))]) ])
+
       | Lt(STR x, INT n ) -> 
-        let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
-        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Lt(VAR (x^"_v"), INT n ))]) ])
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom x; Pure (Lt(VAR (x^"_v"), INT n ))]) ])
 
       | Eq(STR x, INT n ) -> 
-        let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
-        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Eq(VAR (x^"_v"), INT n ))]) ])
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom x; Pure (Eq(VAR (x^"_v"), INT n ))]) ])
 
+      (* *********************************************************************
+      The above the pattern matching is needed for checking variables' values, for example, 
+      "x" > 1 will be written as valuation("x", loc, x_v), x_v>1. 
+      --- Yahui Song
+      ********************************************************************* *)
       | _ ->  pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; Pure pure]) ])
       )
-
-    (*| Atom (pName, pure) -> 
-      let vars = VAR "loc" :: infer_variables pure in
-      let params =  ("loc" , Number) :: infer_params pure in
-      pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; Pure pure]) ])
-    *)
     
     | Neg f -> 
       let fName,(declarations,rules) = translation_inner f in
@@ -348,7 +337,35 @@ and translation_inner (ctl:ctl) : string * datalog =
       The approach here makes y and z first to allow for easier manipulation 
 
       *)
-      let fName,(declarations,rules) = translation_inner f in
+      let fName,(declarations,rules) = 
+        match f with 
+
+        | Atom (notPName, Lt(STR x, INT n)) -> 
+
+          let negetionName, (negetionDecl, negetionRules) = translation_inner (Atom ("not_"^notPName,  GtEq(STR x, INT n))) in 
+          
+          let findallDecl = (notPName, [ ("loc", Number)]) in  
+          let findallRules = (notPName, [VAR "loc"] ), [ Pos ("state", [VAR "loc"]); Pos("valuation", [STR x; VAR "loc"; Any]); Neg(negetionName, [VAR "loc"]) ] in  
+
+
+          notPName, (findallDecl :: negetionDecl, findallRules :: negetionRules)
+
+      (* *********************************************************************
+      The above the pattern matching is needed for constructing the atomic P rules, 
+      when we are computing AF p. Usually the encoding needs simple "!P". 
+      But since the analysis may be overapproximating, we need to compute “for sure !P” 
+      For example, AF x<0, will be encoded as: 
+
+      1) not_xIsSmallerThan_0(loc) :- state(loc), valuation("x",loc,x_v), (x_v >= 0).
+      2) xIsSmallerThan_0(loc) :- state(loc), valuation("x",loc,_), !not_xIsSmallerThan_0(loc).
+
+      where 1) captures the negation of x<0, then 2) captures "for sure x<0", 
+      then subsequently, we can use !xIsSmallerThan_0 as usual. 
+
+      --- Yahui Song
+      ********************************************************************* *)
+
+        | _ -> translation_inner f in
       let newName = "AF_" ^ fName in
       let sName = newName ^ "_S" in
       let tName = newName ^ "_T" in
@@ -456,7 +473,8 @@ let tests  =
   let aF_terminate  = AF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
   let aF_yIsValue_1 = AF(Atom("yIsValue_1", (Eq(STR "y", INT 1)))) in 
   let eF_yIsValue_1 = EF(Atom("yIsValue_1", (Eq(STR "y", INT 1)))) in 
-  let eF_xIsSmallerThan_0 = EF(Atom("xIsSmallerThan_1", (Lt(STR "x", INT 0)))) in 
+  let eF_xIsSmallerThan_0 = EF(Atom("xIsSmallerThan_0", (Lt(STR "x", INT 0)))) in 
+  let aF_xIsSmallerThan_0 = AF(Atom("xIsSmallerThan_0", (Lt(STR "x", INT 0)))) in 
 
   [
     (*Atom("xIsPos", (Gt(STR "x", INT 0)));
@@ -472,7 +490,8 @@ let tests  =
     aF_terminate;
     aF_yIsValue_1;
     eF_yIsValue_1;
-    eF_xIsSmallerThan_0
+    eF_xIsSmallerThan_0;
+    aF_xIsSmallerThan_0
     
 
   ] 
