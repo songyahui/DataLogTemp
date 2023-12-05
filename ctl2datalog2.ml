@@ -264,6 +264,10 @@ and translation_inner (ctl:ctl) : string * datalog =
       | Gt(STR x, INT n ) -> 
         let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
         pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Gt(VAR (x^"_v"), INT n ))]) ])
+      | Lt(STR x, INT n ) -> 
+        let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Lt(VAR (x^"_v"), INT n ))]) ])
+
       | Eq(STR x, INT n ) -> 
         let valuationAtom = Pos ("valuation", [STR x; VAR "loc"; VAR (x^"_v")] ) in 
         pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom; Pure (Eq(VAR (x^"_v"), INT n ))]) ])
@@ -452,6 +456,7 @@ let tests  =
   let aF_terminate  = AF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
   let aF_yIsValue_1 = AF(Atom("yIsValue_1", (Eq(STR "y", INT 1)))) in 
   let eF_yIsValue_1 = EF(Atom("yIsValue_1", (Eq(STR "y", INT 1)))) in 
+  let eF_xIsSmallerThan_0 = EF(Atom("xIsSmallerThan_1", (Lt(STR "x", INT 0)))) in 
 
   [
     (*Atom("xIsPos", (Gt(STR "x", INT 0)));
@@ -466,7 +471,8 @@ let tests  =
     eF_terminate;
     aF_terminate;
     aF_yIsValue_1;
-    eF_yIsValue_1
+    eF_yIsValue_1;
+    eF_xIsSmallerThan_0
     
 
   ] 
