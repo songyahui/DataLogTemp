@@ -1,0 +1,92 @@
+/*
+ * Date: 06/07/2015  "AF{x < 0}"
+ * Created by: Ton Chanh Le (chanhle@comp.nus.edu.sg)
+ * Adapted from the example Bangalore_true-termination.c
+ */
+/**
+int _nondet_int() {}
+
+int main()
+{
+    int x;
+    int y;
+    x = _nondet_int();
+    y = _nondet_int();
+	if (y < 1) {
+	    while (x >= 0) {
+	    	x = x - y;
+    	} // this loop is for sure not terminating, because y <= 0 
+	}
+	return 0;
+}
+*/
+
+entry(9). end(21).
+state(9). state(10). state(11). state(12). state(13). state(14). state(15).
+state(16). state(17). state(18). state(19). state(20). state(21).
+
+flow (9, 10). flow (10, 11). flow (11, 12). flow (12, 13). flow (13, 14). flow (14, 15). 
+flow (15, 16) :- valuation("y", 15, y_v), y_v<1.
+flow (16, 18) :- valuation("x", 16, x_v), x_v<0. // escape the loop 
+flow (18, 19) :- valuation("x", 16, x_v), x_v<0. // escape the loop 
+flow (19, 20) :- valuation("x", 16, x_v), x_v<0. // escape the loop 
+
+flow (16, 17) :- valuation("x", 16, x_v), x_v>=0. // escape the loop 
+flow (17, 16) :- valuation("y", 16, y_v), y_v<=0. // escape the loop 
+
+flow (15, 20) :- valuation("y", 15, y_v), y_v>=1.
+flow (20, 21).
+
+
+/** *********************************************************************
+General NOTE: 
+This test case checks the (AF{x < 0}) property of a program.
+i) satisfy the property if x<0 and y>=1 at line 16; or 
+ii) if x<0 and y<1 at line 16; or 
+iii) otherwise the property does NOT hold
+So the valuation of x and y matters. 
+********************************************************************* */
+/** *********************************************************************
+Repair NOTE: 
+We want the AF{x < 0} property to hold at line 9. To repair: 
+1) change the following to be: 
+assign("x", 13, -1). 
+assign("y", 14, 2). 
+
+2) change the following to be: 
+assign("x", 13, -1). 
+assign("y", 14, 0). 
+********************************************************************* */
+
+assign("x", 13, -1). 
+assign("y", 14, 0). 
+
+
+
+.decl entry(x:number)
+.decl end(x:number)
+.decl valuation(x:symbol,loc:number,n:number)
+.decl assign(x:symbol,loc:number,n:number)
+.decl state(x:number)
+.decl flow(x:number,y:number)
+.decl transFlow(x:number,y:number)
+.decl not_xIsSmallerThan_0(loc:number)
+.decl xIsSmallerThan_0(loc:number)
+.decl AF_xIsSmallerThan_0_T(interm_state:number,loc:number)
+.decl AF_xIsSmallerThan_0_S(loc:number)
+.decl AF_xIsSmallerThan_0(loc:number)
+.decl AF_xIsSmallerThan_0Final(loc:number)
+transFlow(x,y) :- flow(x,y).
+transFlow(x,z) :- flow(x,y), transFlow(y,z).
+valuation(x,loc,n) :- assign(x,loc,n).
+valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_).
+not_xIsSmallerThan_0(loc) :- state(loc), valuation("x",loc,x_v), (x_v >= 0).
+xIsSmallerThan_0(loc) :- state(loc), valuation("x",loc,_), !not_xIsSmallerThan_0(loc).
+AF_xIsSmallerThan_0_T(interm_state,loc) :- AF_xIsSmallerThan_0_T(tempOne,loc), !xIsSmallerThan_0(tempOne), flow(tempOne,interm_state).
+AF_xIsSmallerThan_0_T(interm_state,loc) :- !xIsSmallerThan_0(loc), flow(loc,interm_state).
+AF_xIsSmallerThan_0_S(loc) :- !xIsSmallerThan_0(loc), flow(loc,tempOne), AF_xIsSmallerThan_0_S(tempOne).
+AF_xIsSmallerThan_0_S(loc) :- !xIsSmallerThan_0(loc), end(loc).
+AF_xIsSmallerThan_0_S(loc) :- AF_xIsSmallerThan_0_T(loc,loc).
+AF_xIsSmallerThan_0(loc) :- state(loc), !AF_xIsSmallerThan_0_S(loc).
+AF_xIsSmallerThan_0Final(loc) :- entry(loc), AF_xIsSmallerThan_0(loc).
+.output AF_xIsSmallerThan_0Final(IO=stdout)
