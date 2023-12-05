@@ -6,6 +6,7 @@
  */
 
 int main() {
+    int term = 0; 
     int i;
     int x;
     int y;
@@ -16,7 +17,8 @@ int main() {
     if (i > 10) {
         x = 1;
     }     
-    while (x == y) { }
+    while (x == y) {}
     
+    term = 1; 
     return 0;
 }
