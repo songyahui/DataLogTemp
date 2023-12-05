@@ -1,0 +1,85 @@
+
+/**
+ * Samuel Ueltschi: example for potential termination
+ *
+ * -ctl "EF{exit: true}"
+
+
+int main() {
+    int term = 0; 
+    int i;
+    int x;
+    int y;
+    y = 1;
+    i = ?;
+    x = ?;
+
+    if (i > 10) {
+        x = 1;
+    }     
+    while (x == y) {}
+    
+    term = 1; 
+    return 0;
+}
+*/
+
+entry(8). end(24).
+state(8). state(9). state(10). state(11). state(12). state(13). state(14). state(15).
+state(17). state(18). state(20). state(22). state(23). 
+flow (8, 9). flow (9, 10). flow (10, 11). flow (11, 12). flow (12, 13). flow (13, 14). flow (14, 15). flow (15, 17).
+
+flow (17, 18) :- valuation("i", 17, x_v), x_v>10.
+flow (18, 20) :- valuation("i", 17, x_v), x_v>10.
+flow (17, 19) :- valuation("i", 17, x_v), x_v<=10.
+flow (19, 20) :- valuation("i", 17, x_v), x_v<=10.
+flow (20, 20) :- valuation("x", 20, x_v), valuation("y", 20, y_v), x_v=y_v.
+flow (20, 22) :- valuation("x", 20, x_v), valuation("y", 20, y_v), x_v!=y_v. 
+
+flow (22, 23). 
+flow (23, 24).
+
+assign("y", 13, 1).
+assign("x", 18, 1).
+assign("term", 9, 0).
+assign("term", 22, 1).
+
+
+/* *********************************************************************
+General NOTE: 
+This test case checks the (EF terminating) property of a program, which 
+is explicitly marked by "if term=1 is reachable". 
+i) the program terminates if x !=1 at line 20
+ii) does NOT terminate    if x = 1 at line 20. 
+So the valuation of i and x matters. 
+********************************************************************* */
+/* *********************************************************************
+Repair NOTE: 
+We want to termination property to hold. To repair: 
+1) change assign("i", 14, 11) to assign("i", 14, 10).
+2) add assign("i", 14, 10). directly
+3) change assign("y", 13, 1) to assign("y", 13, 3).  
+********************************************************************* */
+
+assign("i", 14, 11). //assign("i", 14, 10).
+assign("x", 15, 5). //assign("x", 15, 1).
+
+.decl entry(x:number)
+.decl end(x:number)
+.decl valuation(x:symbol,loc:number,n:number)
+.decl assign(x:symbol,loc:number,n:number)
+.decl state(x:number)
+.decl flow(x:number,y:number)
+.decl transFlow(x:number,y:number)
+.decl terminating(loc:number)
+.decl EF_terminating(loc:number)
+.decl EF_terminatingFinal(loc:number)
+transFlow(x,y) :- flow(x,y).
+transFlow(x,z) :- flow(x,y), transFlow(y,z).
+valuation(x,loc,n) :- assign(x,loc,n).
+valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_).
+terminating(loc) :- state(loc), valuation("term",loc,term_v), (term_v = 1).
+EF_terminating(loc) :- flow(loc,tempOne), EF_terminating(tempOne).
+EF_terminating(loc) :- terminating(loc).
+EF_terminatingFinal(loc) :- entry(loc), EF_terminating(loc).
+.output EF_terminatingFinal(IO=stdout)

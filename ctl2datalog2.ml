@@ -355,8 +355,8 @@ and translation_inner (ctl:ctl) : string * datalog =
         [] -> failwith "confused"
         | x :: xs -> x, arg :: xs in
 
-      let tArg = VAR "__state_extra" in
-      let tParam = "__state_extra" , Symbol in
+      let tArg = VAR "interm_state" in
+      let tParam = "interm_state" , Number in
       let tArgs = tArg :: fArgs in
       let tNewArgs = arg :: fArgs in
       let tParams = tParam :: fParams in
@@ -446,7 +446,7 @@ let tests  =
   let eG_xIsValue_1_Imply_AF_xIsValue_0 = EG(xIsValue_1_Imply_AF_xIsValue_0) in 
   let aG_xIsValue_1_Imply_AF_xIsValue_0 = AG(xIsValue_1_Imply_AF_xIsValue_0) in 
   let eF_terminate  = EF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
-
+  let aF_terminate  = AF(Atom("terminating", (Eq(STR "term", INT 1)))) in 
   [
     (*Atom("xIsPos", (Gt(STR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
@@ -457,7 +457,8 @@ let tests  =
     AF(Atom("y", Gt(VAR "x", INT 0)));
     eG_xIsValue_1_Imply_AF_xIsValue_0;
     aG_xIsValue_1_Imply_AF_xIsValue_0; *)
-    eF_terminate
+    eF_terminate;
+    aF_terminate
     
 
   ] 
