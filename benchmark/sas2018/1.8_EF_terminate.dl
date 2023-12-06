@@ -55,7 +55,7 @@ So the valuation of i and x matters.
 ********************************************************************* */
 /** *********************************************************************
 Repair NOTE: 
-We want to termination property to hold. To repair: 
+We want the termination property to hold. To repair: 
 1) change assign("i", 14, 11) to assign("i", 14, 10).
 2) add assign("i", 14, 10). directly
 3) change assign("y", 13, 1) to assign("y", 13, 3).  

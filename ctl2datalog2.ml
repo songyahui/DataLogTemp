@@ -262,6 +262,10 @@ and translation_inner (ctl:ctl) : string * datalog =
       | Eq(STR x, INT n ) -> 
         pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom x; Pure (Eq(VAR (x^"_v"), INT n ))]) ])
 
+      | NEq(STR x, INT n ) -> 
+        pName,([(pName,params)], [  ((pName, vars), [Pos("state", [VAR "loc"]) ; valuationAtom x; Pure (NEq(VAR (x^"_v"), INT n ))]) ])
+
+
       (* *********************************************************************
       The above the pattern matching is needed for checking variables' values, for example, 
       "x" > 1 will be written as valuation("x", loc, x_v), x_v>1. 
@@ -349,6 +353,17 @@ and translation_inner (ctl:ctl) : string * datalog =
 
 
           notPName, (findallDecl :: negetionDecl, findallRules :: negetionRules)
+
+        | Atom (notPName, Eq(STR x, INT n)) -> 
+
+          let negetionName, (negetionDecl, negetionRules) = translation_inner (Atom ("not_"^notPName,  NEq(STR x, INT n))) in 
+          
+          let findallDecl = (notPName, [ ("loc", Number)]) in  
+          let findallRules = (notPName, [VAR "loc"] ), [ Pos ("state", [VAR "loc"]); Pos("valuation", [STR x; VAR "loc"; Any]); Neg(negetionName, [VAR "loc"]) ] in  
+
+
+          notPName, (findallDecl :: negetionDecl, findallRules :: negetionRules)
+
 
       (* *********************************************************************
       The above the pattern matching is needed for constructing the atomic P rules, 
@@ -463,6 +478,7 @@ and translation_inner (ctl:ctl) : string * datalog =
   (* core, EX, AF, AU, the rest needs to be translated *)
 
 let tests  = 
+  let isValue x n = Atom(x^"IsValue_"^(string_of_int n), (Eq(STR x, INT n))) in 
   let xIsValue_1 = Atom("xIsValue_1", (Eq(STR "x", INT 1))) in 
   let xIsValue_0 = Atom("xIsValue_0", (Eq(STR "x", INT 0))) in 
   let aF_xIsValue_0 = AF(xIsValue_0) in 
@@ -475,7 +491,8 @@ let tests  =
   let eF_yIsValue_1 = EF(Atom("yIsValue_1", (Eq(STR "y", INT 1)))) in 
   let eF_xIsSmallerThan_0 = EF(Atom("xIsSmallerThan_0", (Lt(STR "x", INT 0)))) in 
   let aF_xIsSmallerThan_0 = AF(Atom("xIsSmallerThan_0", (Lt(STR "x", INT 0)))) in 
-
+  let aG_AF_t_is1_AND_AF_t_is0 = AG(Conj (AF(isValue "t" 1) , AF(isValue "t" 0))) in 
+  let eG_AF_t_is1_AND_AF_t_is0 = EG(Conj (AF(isValue "t" 1) , AF(isValue "t" 0))) in 
   [
     (*Atom("xIsPos", (Gt(STR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
@@ -491,7 +508,9 @@ let tests  =
     aF_yIsValue_1;
     eF_yIsValue_1;
     eF_xIsSmallerThan_0;
-    aF_xIsSmallerThan_0
+    aF_xIsSmallerThan_0;
+    aG_AF_t_is1_AND_AF_t_is0;
+    eG_AF_t_is1_AND_AF_t_is0
     
 
   ] 

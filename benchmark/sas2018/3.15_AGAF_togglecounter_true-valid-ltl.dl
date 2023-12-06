@@ -1,0 +1,109 @@
+// -ctl "AG{AND{AF{t == 1}{AF{t == 0}}}}"
+// CHECK( init(main()), LTL( G(F"t==1" && F"t==0") ) )
+/** 
+int main()
+{
+    int i, t;
+	while (1){
+		if (i%2 == 0){
+			t = 1;
+	 // ++  t =0 
+		} else {
+			t = 0;
+	 // ++  t =1
+		}
+	 // --  i++;
+	}
+}
+*/
+
+entry(4). end(17).
+state(4). state(5). state(6). state(7). state(8). state(9). state(10). state(11). state(12). state(13). state(14). state(15).
+
+flow (4, 5). flow (5, 6). flow (6, 7). flow (7, 8).
+flow (8, 9) :- valuation("i", 8, i_v), i_v%2 =0. 
+flow (9, 10) :- valuation("i", 8, i_v), i_v%2 =0. 
+flow (10, 15) :- valuation("i", 8, i_v), i_v%2 =0. 
+
+flow (8, 12) :- valuation("i", 8, i_v), i_v%2 =1. 
+flow (12, 13) :- valuation("i", 8, i_v), i_v%2 =1. 
+flow (13, 15) :- valuation("i", 8, i_v), i_v%2 =1.    
+
+flow (15, 16). 
+flow (16, 7). 
+
+/** *********************************************************************
+General NOTE: 
+This test case checks the "AG{AND{AF{t == 1}{AF{t == 0}}}}" property of a program
+This the fact generation for this example is a bit tricky. 
+Because we need to have a pre-analysis to conclude that 
+inside of the loop, no matter what is the value of i, 
+t's value is taking turns to be equal to 1 and 0. Thus, 
+1) when i is even from line 6: the trace is (t=1).(t=0).(t=1).(t=0).....
+1) when i is odd  from line 6: the trace is (t=0).(t=1).(t=0).(t=1).....
+********************************************************************* */
+/** *********************************************************************
+Repair NOTE: 
+t = 1 and t =0 have to happen in both branches. 
+We want the property to hold. To repair: 
+1) add assign("t", 12, 0) directly
+********************************************************************* */
+
+assign("i", 6, 1).  assign("i", 6, 2).  // random value of i 
+assign("t", 9, 1).  assign("t", 13, 1). 
+assign("t", 10, 0). //assign("t", 12, 0). 
+
+
+.decl entry(x:number)
+.decl end(x:number)
+.decl valuation(x:symbol,loc:number,n:number)
+.decl assign(x:symbol,loc:number,n:number)
+
+.decl state(x:number)
+.decl flow(x:number,y:number)
+.decl transFlow(x:number,y:number)
+.decl not_tIsValue_0(loc:number)
+.decl tIsValue_0(loc:number)
+.decl AF_tIsValue_0_T(interm_state:number,loc:number)
+.decl AF_tIsValue_0_S(loc:number)
+.decl AF_tIsValue_0(loc:number)
+.decl not_tIsValue_1(loc:number)
+.decl tIsValue_1(loc:number)
+.decl AF_tIsValue_1_T(interm_state:number,loc:number)
+.decl AF_tIsValue_1_S(loc:number)
+.decl AF_tIsValue_1(loc:number)
+.decl AF_tIsValue_1_AND_AF_tIsValue_0(loc:number)
+.decl NOT_AF_tIsValue_1_AND_AF_tIsValue_0(loc:number)
+.decl EF_NOT_AF_tIsValue_1_AND_AF_tIsValue_0(loc:number)
+.decl AG_AF_tIsValue_1_AND_AF_tIsValue_0(loc:number)
+.decl AG_AF_tIsValue_1_AND_AF_tIsValue_0Final(loc:number)
+transFlow(x,y) :- flow(x,y).
+transFlow(x,z) :- flow(x,y), transFlow(y,z).
+valuation(x,loc,n) :- assign(x,loc,n).
+valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_). 
+not_tIsValue_0(loc) :- state(loc), valuation("t",loc,t_v), (t_v != 0).
+tIsValue_0(loc) :- state(loc), valuation("t",loc,_), !not_tIsValue_0(loc).
+AF_tIsValue_0_T(interm_state,loc) :- AF_tIsValue_0_T(tempOne,loc), !tIsValue_0(tempOne), flow(tempOne,interm_state).
+AF_tIsValue_0_T(interm_state,loc) :- !tIsValue_0(loc), flow(loc,interm_state).
+AF_tIsValue_0_S(loc) :- !tIsValue_0(loc), flow(loc,tempOne), AF_tIsValue_0_S(tempOne).
+AF_tIsValue_0_S(loc) :- !tIsValue_0(loc), end(loc).
+AF_tIsValue_0_S(loc) :- AF_tIsValue_0_T(loc,loc).
+AF_tIsValue_0(loc) :- state(loc), !AF_tIsValue_0_S(loc).
+not_tIsValue_1(loc) :- state(loc), valuation("t",loc,t_v), (t_v != 1).
+tIsValue_1(loc) :- state(loc), valuation("t",loc,_), !not_tIsValue_1(loc).
+AF_tIsValue_1_T(interm_state,loc) :- AF_tIsValue_1_T(tempOne,loc), !tIsValue_1(tempOne), flow(tempOne,interm_state).
+AF_tIsValue_1_T(interm_state,loc) :- !tIsValue_1(loc), flow(loc,interm_state).
+AF_tIsValue_1_S(loc) :- !tIsValue_1(loc), flow(loc,tempOne), AF_tIsValue_1_S(tempOne).
+AF_tIsValue_1_S(loc) :- !tIsValue_1(loc), end(loc).
+AF_tIsValue_1_S(loc) :- AF_tIsValue_1_T(loc,loc).
+AF_tIsValue_1(loc) :- state(loc), !AF_tIsValue_1_S(loc).
+AF_tIsValue_1_AND_AF_tIsValue_0(loc) :- AF_tIsValue_1(loc), AF_tIsValue_0(loc).
+NOT_AF_tIsValue_1_AND_AF_tIsValue_0(loc) :- state(loc), !AF_tIsValue_1_AND_AF_tIsValue_0(loc).
+EF_NOT_AF_tIsValue_1_AND_AF_tIsValue_0(loc) :- flow(loc,tempOne), EF_NOT_AF_tIsValue_1_AND_AF_tIsValue_0(tempOne).
+EF_NOT_AF_tIsValue_1_AND_AF_tIsValue_0(loc) :- NOT_AF_tIsValue_1_AND_AF_tIsValue_0(loc).
+AG_AF_tIsValue_1_AND_AF_tIsValue_0(loc) :- state(loc), !EF_NOT_AF_tIsValue_1_AND_AF_tIsValue_0(loc).
+AG_AF_tIsValue_1_AND_AF_tIsValue_0Final(loc) :- entry(loc), AG_AF_tIsValue_1_AND_AF_tIsValue_0(loc).
+.output AG_AF_tIsValue_1_AND_AF_tIsValue_0Final(IO=stdout)
+
+
+
