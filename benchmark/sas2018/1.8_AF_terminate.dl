@@ -2,7 +2,7 @@
 /**
  * Samuel Ueltschi: example for potential termination
  *
- * -ctl "EF{exit: true}"
+ * -ctl "AF{exit: true}"
 
 int _nondet_int() {}
 int main() {
