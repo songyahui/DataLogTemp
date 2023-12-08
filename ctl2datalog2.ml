@@ -10,7 +10,7 @@ type pure = TRUE
           | NEq of terms * terms
           | PureOr of pure * pure
           | PureAnd of pure * pure
-          | Neg of pure
+          | NegPure of pure
           (* | Pos of terms *)
 
 (*Arithimetic propositions formulae*)
@@ -76,7 +76,7 @@ let rec string_of_pure (pure:pure) =
   | NEq (a,b) -> "(" ^ (string_of_term a) ^ " != " ^ (string_of_term b) ^ ")"
   | PureOr(a,b) -> "(" ^ (string_of_pure a) ^ " || " ^ (string_of_pure b) ^ ")"
   | PureAnd(a,b) -> "(" ^ (string_of_pure a) ^ " && " ^ (string_of_pure b) ^ ")"
-  | Neg a -> "!(" ^ (string_of_pure a) ^ ")"
+  | NegPure a -> "!(" ^ (string_of_pure a) ^ ")"
   (* | Pos a -> string_of_term a *)
 
 
@@ -137,7 +137,7 @@ let rec infer_variables (pure:pure) =
   | NEq (a,b) -> (get_variable_terms a) @ (get_variable_terms b)
   | PureOr(a,b) -> (infer_variables a) @ (infer_variables b)
   | PureAnd(a,b) ->(infer_variables a) @ (infer_variables b)
-  | Neg a -> infer_variables a
+  | NegPure a -> infer_variables a
   in List.sort_uniq term_compare x
   (* | Pos a -> get_variable_terms a *)
 
@@ -149,7 +149,7 @@ let rec infer_params (pure:pure) : param list =
   let x = match pure with 
   TRUE -> []
   | FALSE -> []
-  | Neg a -> infer_params a
+  | NegPure a -> infer_params a
   | Gt (a,b) -> (get_variable_terms a Number) @ (get_variable_terms b Number) 
   | Lt (a,b) ->  (get_variable_terms a Number) @ (get_variable_terms b Number)
   | GtEq (a,b) ->  (get_variable_terms a Number) @ (get_variable_terms b Number)
@@ -296,7 +296,7 @@ and translation_inner (ctl:ctl) : string * datalog =
         (fun x1 x2 ->  x1 ^ "_IMPLY_" ^ x2) 
         (fun (newName,newArgs) (x1,f1Args) (x2,f2Args) -> 
         [ ( (newName, newArgs) , [Pos(x2,f2Args)]);
-          ( (newName, newArgs) , [Neg(x1,f1Args)] )
+          ( (newName, newArgs) , [Pos("state", [VAR "loc"]) ; Neg(x1,f1Args)] )
         ])
 
     (* Primary CTL Encoding *)
@@ -493,6 +493,8 @@ let tests  =
   let aF_xIsSmallerThan_0 = AF(Atom("xIsSmallerThan_0", (Lt(STR "x", INT 0)))) in 
   let aG_AF_t_is1_AND_AF_t_is0 = AG(Conj (AF(isValue "t" 1) , AF(isValue "t" 0))) in 
   let eG_AF_t_is1_AND_AF_t_is0 = EG(Conj (AF(isValue "t" 1) , AF(isValue "t" 0))) in 
+  let not_ag_timeIs0_Imply_outputIs1 = (AG (Imply(isValue "timer_1" 0, isValue "output_1" 1))) in 
+
   [
     (*Atom("xIsPos", (Gt(STR "x", INT 0)));
     Atom("xIsPosAnd2", (PureAnd ((Gt(VAR "x", INT 0)),(Eq(VAR "x", INT 2)))));
@@ -510,7 +512,8 @@ let tests  =
     eF_xIsSmallerThan_0;
     aF_xIsSmallerThan_0;
     aG_AF_t_is1_AND_AF_t_is0;
-    eG_AF_t_is1_AND_AF_t_is0
+    eG_AF_t_is1_AND_AF_t_is0;
+    not_ag_timeIs0_Imply_outputIs1
     
 
   ] 

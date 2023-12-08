@@ -20,7 +20,8 @@ void main() {
 
   while(curr_serv > 0) {
     if(_nondet_int()) {
-      c--; curr_serv--;
+      c--; 
+      curr_serv--;
       resp++;
     } else if (c < curr_serv) {
       curr_serv--;
