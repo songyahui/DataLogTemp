@@ -8,49 +8,51 @@ int output_1;
 	
 int main()
 {
-	timer_1 = 10;
+	timer_1 = 0;
 	output_1 = 0;
 
     while(1){
-        timer_1++;
-        if(timer_1>=10){
-            timer_1=0;
-        }
-		if(timer_1==0){
-			output_1=1;
-		} else{
-			output_1=0;
-		}
+		timer_1 = 10; 
+		timer_1 = 0;
+		output_1 = 1;
     }
 }
+
+        //timer_1++;
+        //if(timer_1>=10){ timer_1=0; }
+		//if(timer_1==0){ output_1=1; } 
+		//else{ output_1=0; }
 */
 
-entry(9). end(25). 
-state(9). state(10). state(11). state(12). state(13). state(14). state(15).
-state(16). state(17). state(18). state(19). state(20). state(21).
-state(22). state(23). state(24). state(25). 
+entry(9). end(19). 
+state(9). state(10). state(11). state(12). state(13). state(14). 
+state(15). state(16). state(17).  state(18). state(19). 
 
-flow (9, 10). flow (10, 11). flow (11, 12). flow (12, 13). flow (13, 14). flow (14, 15). flow(15, 16). 
-flow (16, 17) :- valuation("timer_1", 15, t_v), t_v>=10. 
-flow (17, 19) :- valuation("timer_1", 15, t_v), t_v>=10. 
-flow (16, 19) :- valuation("timer_1", 15, t_v), t_v<10. 
+flow (9, 10). flow (10, 11). flow (11, 12). flow (12, 13). flow (13, 14). 
+flow (14, 15). flow(15, 16). 
+flow (16, 17). flow (17, 18). //flow (18, 14). 
 
-flow (19, 20) :- valuation("timer_1", 19, t_v), t_v=0. 
-flow (20, 24) :- valuation("timer_1", 19, t_v), t_v=0. 
-flow (19, 22) :- valuation("timer_1", 19, t_v), t_v!=0. 
-flow (22, 24) :- valuation("timer_1", 19, t_v), t_v!=0. 
-flow (24, 14) :- valuation("output_1", 24, o_v), o_v!=1. 
+/** *********************************************************************
+General NOTE: 
+This test case checks the (NOT{AG{{timer_1 = 0 -> AF{output_1 == 1}}}}) property of a program.
+this example is tricky because the simple encoding of the  
+********************************************************************* */
+/** *********************************************************************
+Repair NOTE: 
+We want the EF{x < 0} property to hold at line 9. To repair: 
+1) add assign("x", 13, -2) directly
+2) add assign("y", 14, 2) directly
+********************************************************************* */
 
-assign("timer_1", 0, 10). assign("timer_1", 17, 0). 
-increment("timer_1", 15, 1).
-assign("output_1", 12, 0). 
-assign("output_1", 20, 1). 
-assign("output_1", 22, 0). 
+assign("timer_1", 11, 0). 
+//assign("output_1", 12, 0). 
+assign("timer_1", 15, 10). 
+assign("timer_1", 16, 0). 
+assign("output_1", 17, 1). 
 
 .decl entry(x:number)
 .decl end(x:number)
 .decl valuation(x:symbol,loc:number,n:number)
-.decl increment(x:symbol,loc:number,n:number)
 .decl assign(x:symbol,loc:number,n:number)
 .decl state(x:number)
 .decl flow(x:number,y:number)
@@ -61,12 +63,12 @@ assign("output_1", 22, 0).
 .decl NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc:number)
 .decl EF_NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc:number)
 .decl AG_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc:number)
-.decl AG_timer_1IsValue_0_IMPLY_output_1IsValue_1Final(loc:number)
+.decl NOT_AG_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc:number)
+.decl NOT_AG_timer_1IsValue_0_IMPLY_output_1IsValue_1Final(loc:number)
 transFlow(x,y) :- flow(x,y).
 transFlow(x,z) :- flow(x,y), transFlow(y,z).
-valuation(x,loc,n+m) :- increment(x,loc,m), valuation(x,locTemp,n), flow(locTemp,loc). 
 valuation(x,loc,n) :- assign(x,loc,n).
-valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_), !increment(x,loc,_).
+valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_).
 output_1IsValue_1(loc) :- state(loc), valuation("output_1",loc,output_1_v), (output_1_v = 1).
 timer_1IsValue_0(loc) :- state(loc), valuation("timer_1",loc,timer_1_v), (timer_1_v = 0).
 timer_1IsValue_0_IMPLY_output_1IsValue_1(loc) :- state(loc), !timer_1IsValue_0(loc).
@@ -75,7 +77,6 @@ NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc) :- state(loc), !timer_1IsValue
 EF_NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc) :- flow(loc,tempOne), EF_NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(tempOne).
 EF_NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc) :- NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc).
 AG_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc) :- state(loc), !EF_NOT_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc).
-AG_timer_1IsValue_0_IMPLY_output_1IsValue_1Final(loc) :- entry(loc), AG_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc).
-.output AG_timer_1IsValue_0_IMPLY_output_1IsValue_1Final(IO=stdout)
-.output valuation(IO=stdout)
-.output flow(IO=stdout)
+NOT_AG_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc) :- state(loc), !AG_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc).
+NOT_AG_timer_1IsValue_0_IMPLY_output_1IsValue_1Final(loc) :- entry(loc), NOT_AG_timer_1IsValue_0_IMPLY_output_1IsValue_1(loc).
+.output NOT_AG_timer_1IsValue_0_IMPLY_output_1IsValue_1Final(IO=stdout)

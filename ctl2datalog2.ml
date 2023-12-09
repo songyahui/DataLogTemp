@@ -493,7 +493,8 @@ let tests  =
   let aF_xIsSmallerThan_0 = AF(Atom("xIsSmallerThan_0", (Lt(STR "x", INT 0)))) in 
   let aG_AF_t_is1_AND_AF_t_is0 = AG(Conj (AF(isValue "t" 1) , AF(isValue "t" 0))) in 
   let eG_AF_t_is1_AND_AF_t_is0 = EG(Conj (AF(isValue "t" 1) , AF(isValue "t" 0))) in 
-  let not_ag_timeIs0_Imply_outputIs1 = (AG (Imply(isValue "timer_1" 0, isValue "output_1" 1))) in 
+  let (not_ag_timeIs0_Imply_outputIs1: ctl) = Neg (AG (Imply(isValue "timer_1" 0, isValue "output_1" 1))) in 
+  let aF_xIsValue_5 = AF(isValue "x" 5) in 
 
   [
     (*Atom("xIsPos", (Gt(STR "x", INT 0)));
@@ -513,7 +514,8 @@ let tests  =
     aF_xIsSmallerThan_0;
     aG_AF_t_is1_AND_AF_t_is0;
     eG_AF_t_is1_AND_AF_t_is0;
-    not_ag_timeIs0_Imply_outputIs1
+    not_ag_timeIs0_Imply_outputIs1;
+    (*aF_xIsValue_5*)
     
 
   ] 
