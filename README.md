@@ -11,3 +11,5 @@ TODO:
 4. (Martin) start on the transition rules. 
 4.1 (Martin) explain the changes in the ctl2datalog file. 
 5. (Liu Yu) start from the repair implementation. 
+
+6. start on writing the fact generation rules and look for loop invariant generation tools. 
