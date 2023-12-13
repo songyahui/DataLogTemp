@@ -50,11 +50,11 @@ So the valuation of x and y matters.
 Repair NOTE: 
 We want the EF{x < 0} property to hold at line 9. To repair: 
 1) add assign("x", 13, -2) directly
-2) add assign("y", 14, 2) directly
+2) add assign("y", 14, 2) , assign("x", 13, -2).
 ********************************************************************* */
 
 assign("x", 13, 1). //assign("x", 13, -2).
-assign("y", 14, 0). //assign("y", 14, 2).
+assign("y", 14, 2). // assign("x", 13, -2).
 
 .decl entry(x:number)
 .decl end(x:number)

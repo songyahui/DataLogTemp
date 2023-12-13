@@ -1,5 +1,5 @@
 /** // FuncTion arguments:
-// -ctl "AF{y==1}"
+// -ctl "EF{y==1}"
 // -precondition true 
 
 void main() {

@@ -53,7 +53,8 @@ We want the property to hold. To repair:
 
 assign("i", 6, 1).  assign("i", 6, 2).  // random 
 assign("t", 9, 1).  assign("t", 13, 1). 
-//assign("t", 10, 0). assign("t", 12, 0). 
+//assign("t", 10, 0). 
+assign("t", 12, 0). 
 
 
 .decl entry(x:number)

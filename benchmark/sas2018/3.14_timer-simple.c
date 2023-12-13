@@ -23,3 +23,8 @@ int main()
 		}
     }
 }
+
+(timer_1 0->10 ;  timer_1 = 0 ; output_1=1;)^w 
+
+
+AG (  {timer_1 != 0 \/ AF{output_1 == 1}}  )
