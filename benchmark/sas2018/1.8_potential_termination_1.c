@@ -17,7 +17,7 @@ int main() {
     if (i > 10) {
         x = 1;
     }     
-    while (x == y) {}
+    while (x == y) {} // non-term : true 
     
     term = 1; 
     return 0;

@@ -14,7 +14,7 @@ void main() {
 */
 
 
-entry(5). end(13).
+entry(5). 
 state(5). state(6). state(7). state(8). state(9). state(10). state(11). state(12). state(13). 
 flow (5, 6). flow (6, 7). flow (7, 8).
 flow (8, 9). 
@@ -26,6 +26,7 @@ flow (9, 12):- valuation("x", 9, x_v), x_v<2.
 flow (9, 12):- valuation("x", 9, x_v), x_v%2 =1. 
 flow (12, 13):- valuation("x", 9, x_v), x_v<2. 
 flow (12, 13):- valuation("x", 9, x_v), x_v%2 =1. 
+flow (13, 13). 
 
 
 /** *********************************************************************
@@ -48,12 +49,12 @@ assign("x", 8, 1).
 
 
 .decl entry(x:number)
-.decl end(x:number)
 .decl valuation(x:symbol,loc:number,n:number)
 .decl assign(x:symbol,loc:number,n:number)
 .decl state(x:number)
 .decl flow(x:number,y:number)
 .decl transFlow(x:number,y:number)
+.decl not_yIsValue_1(loc:number)
 .decl yIsValue_1(loc:number)
 .decl AF_yIsValue_1_T(interm_state:number,loc:number)
 .decl AF_yIsValue_1_S(loc:number)
@@ -63,11 +64,11 @@ transFlow(x,y) :- flow(x,y).
 transFlow(x,z) :- flow(x,y), transFlow(y,z).
 valuation(x,loc,n) :- assign(x,loc,n).
 valuation(x,loc,n) :- valuation(x,locTemp,n), flow(locTemp,loc), !assign(x,loc,_).
-yIsValue_1(loc) :- state(loc), valuation("y",loc,y_v), (y_v = 1).
+not_yIsValue_1(loc) :- state(loc), valuation("y",loc,y_v), (y_v != 1).
+yIsValue_1(loc) :- state(loc), valuation("y",loc,_), !not_yIsValue_1(loc).
 AF_yIsValue_1_T(interm_state,loc) :- AF_yIsValue_1_T(tempOne,loc), !yIsValue_1(tempOne), flow(tempOne,interm_state).
 AF_yIsValue_1_T(interm_state,loc) :- !yIsValue_1(loc), flow(loc,interm_state).
 AF_yIsValue_1_S(loc) :- !yIsValue_1(loc), flow(loc,tempOne), AF_yIsValue_1_S(tempOne).
-AF_yIsValue_1_S(loc) :- !yIsValue_1(loc), end(loc).
 AF_yIsValue_1_S(loc) :- AF_yIsValue_1_T(loc,loc).
 AF_yIsValue_1(loc) :- state(loc), !AF_yIsValue_1_S(loc).
 AF_yIsValue_1Final(loc) :- entry(loc), AF_yIsValue_1(loc).

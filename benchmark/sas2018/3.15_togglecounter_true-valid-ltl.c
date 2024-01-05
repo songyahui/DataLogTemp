@@ -4,7 +4,7 @@
 int main()
 {
     int i, t;
-	while (1){
+	while (1){ // non-term : (t=0; t=1) ^w \/ (t=1; t=0) ^w
 		if (i%2 == 0){
 			t = 1;
 		} else {
@@ -13,7 +13,4 @@ int main()
 		i++;
 	}
 }
-
-(t=0; t=1) ^w
-(t=1; t=0) ^w
 

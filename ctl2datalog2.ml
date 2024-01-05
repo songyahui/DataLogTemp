@@ -168,7 +168,7 @@ let rec translation (ctl:ctl) : string * datalog =
   let fname, (decs,rules) = (translation_inner ctl) in
   let defaultDecs = [
     ("entry",     [ ("x", Number)]);  
-    ("end",       [ ("x", Number)]); 
+    (* ("end",       [ ("x", Number)]); *)
     ("valuation", [ ("x", Symbol); ("loc", Number); ("n", Number)]);
     ("assign",    [ ("x", Symbol); ("loc", Number); ("n", Number)]);
     (*("assignNonDetermine",    [ ("x", Symbol); ("loc", Number)]);*)
@@ -408,7 +408,7 @@ and translation_inner (ctl:ctl) : string * datalog =
 
         (sName, fArgs), [Pos(tName, firstArg :: firstArg :: List.tl fArgs)];
         (* for finite traces *)
-        (sName,fArgs), [ Neg(fName, fArgs); Pos("end", [firstArg])]; 
+        (* (sName,fArgs), [ Neg(fName, fArgs); Pos("end", [firstArg])];  *)
         (* for infinite traces *)
         (sName,fArgs), [ Neg(fName, fArgs); Pos("flow", [firstArg; arg]); Pos(sName,fNewArgs)  ];
 
